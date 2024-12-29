@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,7 +29,7 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: [{
           parts: [
-            { text: "Analyze this image and provide detailed information about what you see. Include the main object or subject, its characteristics, and any relevant details. Format the response as a JSON object with 'name' (string), 'description' (string), and 'confidence' (number between 0-100)." },
+            { text: "Analyze this image and provide detailed information in a structured format. Include: 1) The main object or subject name, 2) A detailed description, 3) A confidence score (0-100), and 4) Three similar items or related objects. Format the response as a JSON object with 'name' (string), 'description' (string), 'confidence' (number), and 'similar_items' (array of objects with 'name' and 'similarity' score)." },
             {
               inline_data: {
                 mime_type: "image/jpeg",
@@ -59,11 +60,13 @@ serve(async (req) => {
     try {
       parsedResponse = JSON.parse(textResponse)
     } catch (e) {
+      console.error('Error parsing Gemini response:', e)
       // If parsing fails, create a structured response from the text
       parsedResponse = {
         name: "Analysis Result",
         description: textResponse,
-        confidence: 90
+        confidence: 90,
+        similar_items: []
       }
     }
 

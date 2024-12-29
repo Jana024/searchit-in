@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Camera, Upload } from "lucide-react";
+import { Camera, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -9,7 +9,10 @@ interface ImageUploadProps {
 
 export const ImageUpload = ({ onImageSelect }: ImageUploadProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
   const handleFileSelect = (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -35,16 +38,71 @@ export const ImageUpload = ({ onImageSelect }: ImageUploadProps) => {
     setIsDragging(false);
   };
 
-  const openCamera = async () => {
+  const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      // In a real app, we would handle the camera stream here
-      toast.info("Camera functionality coming soon!");
-      stream.getTracks().forEach(track => track.stop());
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: "environment" } 
+      });
+      setStream(mediaStream);
+      setShowCamera(true);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
     } catch (error) {
       toast.error("Unable to access camera");
+      console.error("Camera error:", error);
     }
   };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement("canvas");
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext("2d");
+      
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
+            onImageSelect(file);
+            stopCamera();
+          }
+        }, "image/jpeg");
+      }
+    }
+  };
+
+  if (showCamera) {
+    return (
+      <div className="relative">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="w-full h-64 object-cover rounded-lg"
+        />
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4">
+          <Button onClick={capturePhoto} variant="default">
+            Take Photo
+          </Button>
+          <Button onClick={stopCamera} variant="destructive">
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -83,7 +141,7 @@ export const ImageUpload = ({ onImageSelect }: ImageUploadProps) => {
             Choose File
           </Button>
           <Button
-            onClick={openCamera}
+            onClick={startCamera}
             variant="outline"
             className="flex items-center gap-2"
           >

@@ -12,36 +12,24 @@ const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/
 function cleanResponse(text: string): any {
   try {
     // Extract sections from the text response
-    const name = extractSection(text, "Name") || "Unknown Item";
-    const description = extractSection(text, "Description") || "No description available";
-    const details = extractSection(text, "Details");
-    const product_links = extractSection(text, "Product links");
-    const website = extractSection(text, "Website");
-    const other_features = extractSection(text, "Other Features");
+    const sections = {
+      name: extractSection(text, "Name"),
+      description: extractSection(text, "Description"),
+      details: extractSection(text, "Details"),
+      product_links: extractSection(text, "Product links"),
+      website: extractSection(text, "Website"),
+      other_features: extractSection(text, "Other Features"),
+    };
 
     // Create a structured response
     return {
-      name,
-      description,
-      details,
-      product_links,
-      website,
-      other_features,
-      confidence: 95,
-      similar_items: [
-        {
-          name: "Similar item 1",
-          similarity: 90,
-          purchase_url: "https://example.com/item1",
-          price: "$19.99"
-        },
-        {
-          name: "Similar item 2",
-          similarity: 85,
-          purchase_url: "https://example.com/item2",
-          price: "$24.99"
-        }
-      ]
+      name: sections.name || "Unknown Item",
+      description: sections.description || "No description available",
+      details: sections.details || "No details available",
+      product_links: sections.product_links || "No product links available",
+      website: sections.website || "No website available",
+      other_features: sections.other_features || "No additional features available",
+      confidence: 95
     };
   } catch (error) {
     console.error("Error cleaning response:", error);
@@ -61,18 +49,23 @@ function extractSection(text: string, sectionName: string): string {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured');
+    }
+
     const { image } = await req.json()
     const base64Image = image.replace(/^data:image\/\w+;base64,/, '')
 
+    console.log('Calling Gemini API...');
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${GEMINI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -104,31 +97,40 @@ serve(async (req) => {
           maxOutputTokens: 2048,
         }
       })
-    })
+    });
 
-    const data = await response.json()
-    
     if (!response.ok) {
-      console.error('Gemini API error:', data)
-      throw new Error(data.error?.message || 'Failed to analyze image')
+      const errorData = await response.text();
+      console.error('Gemini API error response:', errorData);
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
     }
 
-    const textResponse = data.candidates[0].content.parts[0].text
-    const cleanedResponse = cleanResponse(textResponse)
-    console.log("Cleaned response:", cleanedResponse)
+    const data = await response.json();
+    console.log('Gemini API response:', data);
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
+      throw new Error('Invalid response format from Gemini API');
+    }
+
+    const textResponse = data.candidates[0].content.parts[0].text;
+    const cleanedResponse = cleanResponse(textResponse);
+    console.log("Cleaned response:", cleanedResponse);
 
     return new Response(
       JSON.stringify(cleanedResponse),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: 'An error occurred while processing the image analysis request.'
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 
       }
-    )
+    );
   }
-})
+});

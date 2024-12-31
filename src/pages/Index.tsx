@@ -10,15 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 interface AnalysisResult {
   name: string;
   description: string;
+  details: string;
+  product_links: string;
+  website: string;
+  other_features: string;
   confidence: number;
-  similar_items?: Array<{
-    name: string;
-    similarity: number;
-    purchase_url?: string;
-    price?: string;
-  }>;
-  category?: string;
-  usage_tips?: string[];
 }
 
 const Index = () => {
@@ -46,7 +42,10 @@ const Index = () => {
             body: { image: base64Image }
           });
 
-          if (error) throw error;
+          if (error) {
+            console.error('Analysis error:', error);
+            throw error;
+          }
 
           setResults(data);
 
@@ -111,34 +110,12 @@ const Index = () => {
 
           <div className="space-y-6">
             {(isAnalyzing || results) && (
-              <Tabs defaultValue="details" className="animate-fade-in">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="details">Details</TabsTrigger>
-                  <TabsTrigger value="similar">Similar Items</TabsTrigger>
-                  <TabsTrigger value="tips">Usage Tips</TabsTrigger>
-                </TabsList>
-                <TabsContent value="details">
-                  <ResultsDisplay
-                    isLoading={isAnalyzing}
-                    results={results}
-                    view="details"
-                  />
-                </TabsContent>
-                <TabsContent value="similar">
-                  <ResultsDisplay
-                    isLoading={isAnalyzing}
-                    results={results}
-                    view="similar"
-                  />
-                </TabsContent>
-                <TabsContent value="tips">
-                  <ResultsDisplay
-                    isLoading={isAnalyzing}
-                    results={results}
-                    view="tips"
-                  />
-                </TabsContent>
-              </Tabs>
+              <Card className="p-6 animate-fade-in">
+                <ResultsDisplay
+                  isLoading={isAnalyzing}
+                  results={results}
+                />
+              </Card>
             )}
           </div>
         </div>

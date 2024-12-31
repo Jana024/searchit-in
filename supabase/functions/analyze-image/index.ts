@@ -13,30 +13,52 @@ function cleanResponse(text: string): any {
   try {
     // Remove any JSON formatting characters that might be in the text
     const cleanedText = text.replace(/```json|```|\\/g, '').trim();
-    // Parse the cleaned text into an object
-    const parsedResponse = JSON.parse(cleanedText);
     
-    // Ensure all required fields are present and properly formatted
+    // Create a structured response with the desired format
     return {
-      name: parsedResponse.name || "Unknown Object",
-      description: parsedResponse.description || "No description available",
-      confidence: Number(parsedResponse.confidence) || 0,
-      similar_items: Array.isArray(parsedResponse.similar_items) 
-        ? parsedResponse.similar_items.map((item: any) => ({
-            name: item.name || "Similar Item",
-            similarity: Number(item.similarity) || 0,
-            purchase_url: item.purchase_url || undefined,
-            price: item.price || undefined
-          }))
-        : [],
-      category: parsedResponse.category || undefined,
-      usage_tips: Array.isArray(parsedResponse.usage_tips) 
-        ? parsedResponse.usage_tips 
-        : []
+      name: "Character Analysis",
+      sections: [
+        {
+          title: "Name",
+          content: extractSection(cleanedText, "name") || "Unknown Character"
+        },
+        {
+          title: "Description",
+          content: extractSection(cleanedText, "description") || "No description available"
+        },
+        {
+          title: "Details",
+          content: extractSection(cleanedText, "details") || "No details available"
+        },
+        {
+          title: "Product Links",
+          content: extractSection(cleanedText, "product_links") || "No product links available"
+        },
+        {
+          title: "Website",
+          content: extractSection(cleanedText, "website") || "No website information available"
+        },
+        {
+          title: "Other Features",
+          content: extractSection(cleanedText, "other_features") || "No additional features listed"
+        }
+      ],
+      confidence: 95
     };
   } catch (error) {
     console.error("Error cleaning response:", error);
     throw new Error("Failed to parse analysis results");
+  }
+}
+
+function extractSection(text: string, sectionName: string): string {
+  try {
+    const regex = new RegExp(`${sectionName}[:\\s]+(.*?)(?=\\n\\n|$)`, 'i');
+    const match = text.match(regex);
+    return match ? match[1].trim() : "";
+  } catch (error) {
+    console.error(`Error extracting ${sectionName}:`, error);
+    return "";
   }
 }
 
@@ -60,7 +82,17 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: [{
           parts: [
-            { text: "Analyze this image and provide detailed information in a structured format. Include: 1) The main object or subject name, 2) A detailed description, 3) A confidence score (0-100), and 4) Three similar items or related objects. Format the response as a JSON object with 'name' (string), 'description' (string), 'confidence' (number), and 'similar_items' (array of objects with 'name' and 'similarity' score)." },
+            { 
+              text: `Analyze this image and provide information in the following format:
+                     Name: [Character or object name]
+                     Description: [Brief overview]
+                     Details: [Specific details about appearance and environment]
+                     Product Links: [Related merchandise or items]
+                     Website: [Official or reference sources]
+                     Other Features: [Additional relevant information]
+                     
+                     Please provide a detailed analysis following this exact structure.`
+            },
             {
               inline_data: {
                 mime_type: "image/jpeg",

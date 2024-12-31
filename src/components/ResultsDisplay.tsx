@@ -15,6 +15,10 @@ interface ResultsDisplayProps {
   results?: {
     name: string;
     description: string;
+    details?: string;
+    product_links?: string;
+    website?: string;
+    other_features?: string;
     confidence: number;
     similar_items?: SimilarItem[];
     category?: string;
@@ -50,10 +54,31 @@ export const ResultsDisplay = ({ isLoading, results, view }: ResultsDisplayProps
               <p className="text-gray-600 whitespace-pre-wrap">{results.description}</p>
             </div>
             
-            {results.category && (
+            {results.details && (
               <div>
-                <h4 className="text-lg font-semibold mb-2">Category</h4>
-                <p className="text-gray-600">{results.category}</p>
+                <h4 className="text-lg font-semibold mb-2">Details</h4>
+                <p className="text-gray-600">{results.details}</p>
+              </div>
+            )}
+
+            {results.product_links && (
+              <div>
+                <h4 className="text-lg font-semibold mb-2">Product Links</h4>
+                <p className="text-gray-600">{results.product_links}</p>
+              </div>
+            )}
+
+            {results.website && (
+              <div>
+                <h4 className="text-lg font-semibold mb-2">Website</h4>
+                <p className="text-gray-600">{results.website}</p>
+              </div>
+            )}
+
+            {results.other_features && (
+              <div>
+                <h4 className="text-lg font-semibold mb-2">Other Features</h4>
+                <p className="text-gray-600">{results.other_features}</p>
               </div>
             )}
 

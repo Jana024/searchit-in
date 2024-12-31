@@ -11,39 +11,37 @@ const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/
 
 function cleanResponse(text: string): any {
   try {
-    // Remove any JSON formatting characters that might be in the text
-    const cleanedText = text.replace(/```json|```|\\/g, '').trim();
-    
-    // Create a structured response with the desired format
+    // Extract sections from the text response
+    const name = extractSection(text, "Name") || "Unknown Item";
+    const description = extractSection(text, "Description") || "No description available";
+    const details = extractSection(text, "Details");
+    const product_links = extractSection(text, "Product links");
+    const website = extractSection(text, "Website");
+    const other_features = extractSection(text, "Other Features");
+
+    // Create a structured response
     return {
-      name: "Character Analysis",
-      sections: [
+      name,
+      description,
+      details,
+      product_links,
+      website,
+      other_features,
+      confidence: 95,
+      similar_items: [
         {
-          title: "Name",
-          content: extractSection(cleanedText, "name") || "Unknown Character"
+          name: "Similar item 1",
+          similarity: 90,
+          purchase_url: "https://example.com/item1",
+          price: "$19.99"
         },
         {
-          title: "Description",
-          content: extractSection(cleanedText, "description") || "No description available"
-        },
-        {
-          title: "Details",
-          content: extractSection(cleanedText, "details") || "No details available"
-        },
-        {
-          title: "Product Links",
-          content: extractSection(cleanedText, "product_links") || "No product links available"
-        },
-        {
-          title: "Website",
-          content: extractSection(cleanedText, "website") || "No website information available"
-        },
-        {
-          title: "Other Features",
-          content: extractSection(cleanedText, "other_features") || "No additional features listed"
+          name: "Similar item 2",
+          similarity: 85,
+          purchase_url: "https://example.com/item2",
+          price: "$24.99"
         }
-      ],
-      confidence: 95
+      ]
     };
   } catch (error) {
     console.error("Error cleaning response:", error);
@@ -53,7 +51,7 @@ function cleanResponse(text: string): any {
 
 function extractSection(text: string, sectionName: string): string {
   try {
-    const regex = new RegExp(`${sectionName}[:\\s]+(.*?)(?=\\n\\n|$)`, 'i');
+    const regex = new RegExp(`${sectionName}:\\s*(.+?)(?=\\n\\n|\\n[A-Za-z]+:|$)`, 's');
     const match = text.match(regex);
     return match ? match[1].trim() : "";
   } catch (error) {
@@ -63,20 +61,18 @@ function extractSection(text: string, sectionName: string): string {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
     const { image } = await req.json()
-
-    // Remove the data:image/jpeg;base64, prefix if present
     const base64Image = image.replace(/^data:image\/\w+;base64,/, '')
 
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${GEMINI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -84,10 +80,10 @@ serve(async (req) => {
           parts: [
             { 
               text: `Analyze this image and provide information in the following format:
-                     Name: [Character or object name]
+                     Name: [Name of the item/character/object]
                      Description: [Brief overview]
                      Details: [Specific details about appearance and environment]
-                     Product Links: [Related merchandise or items]
+                     Product links: [Related merchandise or items]
                      Website: [Official or reference sources]
                      Other Features: [Additional relevant information]
                      
@@ -117,7 +113,6 @@ serve(async (req) => {
       throw new Error(data.error?.message || 'Failed to analyze image')
     }
 
-    // Clean and format the response
     const textResponse = data.candidates[0].content.parts[0].text
     const cleanedResponse = cleanResponse(textResponse)
     console.log("Cleaned response:", cleanedResponse)

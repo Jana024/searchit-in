@@ -21,6 +21,7 @@ const Index = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalysisResult | null>(null);
+  const [activeView, setActiveView] = useState<"details" | "similar" | "tips">("details");
 
   const handleImageSelect = (file: File) => {
     const imageUrl = URL.createObjectURL(file);
@@ -111,10 +112,34 @@ const Index = () => {
           <div className="space-y-6">
             {(isAnalyzing || results) && (
               <Card className="p-6 animate-fade-in">
-                <ResultsDisplay
-                  isLoading={isAnalyzing}
-                  results={results}
-                />
+                <Tabs defaultValue="details" className="w-full" onValueChange={(value) => setActiveView(value as "details" | "similar" | "tips")}>
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="details">Details</TabsTrigger>
+                    <TabsTrigger value="similar">Similar</TabsTrigger>
+                    <TabsTrigger value="tips">Tips</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="details">
+                    <ResultsDisplay
+                      isLoading={isAnalyzing}
+                      results={results}
+                      view="details"
+                    />
+                  </TabsContent>
+                  <TabsContent value="similar">
+                    <ResultsDisplay
+                      isLoading={isAnalyzing}
+                      results={results}
+                      view="similar"
+                    />
+                  </TabsContent>
+                  <TabsContent value="tips">
+                    <ResultsDisplay
+                      isLoading={isAnalyzing}
+                      results={results}
+                      view="tips"
+                    />
+                  </TabsContent>
+                </Tabs>
               </Card>
             )}
           </div>

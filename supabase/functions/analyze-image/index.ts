@@ -9,6 +9,37 @@ const corsHeaders = {
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
+function cleanResponse(text: string): any {
+  try {
+    // Remove any JSON formatting characters that might be in the text
+    const cleanedText = text.replace(/```json|```|\\/g, '').trim();
+    // Parse the cleaned text into an object
+    const parsedResponse = JSON.parse(cleanedText);
+    
+    // Ensure all required fields are present and properly formatted
+    return {
+      name: parsedResponse.name || "Unknown Object",
+      description: parsedResponse.description || "No description available",
+      confidence: Number(parsedResponse.confidence) || 0,
+      similar_items: Array.isArray(parsedResponse.similar_items) 
+        ? parsedResponse.similar_items.map((item: any) => ({
+            name: item.name || "Similar Item",
+            similarity: Number(item.similarity) || 0,
+            purchase_url: item.purchase_url || undefined,
+            price: item.price || undefined
+          }))
+        : [],
+      category: parsedResponse.category || undefined,
+      usage_tips: Array.isArray(parsedResponse.usage_tips) 
+        ? parsedResponse.usage_tips 
+        : []
+    };
+  } catch (error) {
+    console.error("Error cleaning response:", error);
+    throw new Error("Failed to parse analysis results");
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -54,24 +85,13 @@ serve(async (req) => {
       throw new Error(data.error?.message || 'Failed to analyze image')
     }
 
-    // Parse the response text as JSON
+    // Clean and format the response
     const textResponse = data.candidates[0].content.parts[0].text
-    let parsedResponse
-    try {
-      parsedResponse = JSON.parse(textResponse)
-    } catch (e) {
-      console.error('Error parsing Gemini response:', e)
-      // If parsing fails, create a structured response from the text
-      parsedResponse = {
-        name: "Analysis Result",
-        description: textResponse,
-        confidence: 90,
-        similar_items: []
-      }
-    }
+    const cleanedResponse = cleanResponse(textResponse)
+    console.log("Cleaned response:", cleanedResponse)
 
     return new Response(
-      JSON.stringify(parsedResponse),
+      JSON.stringify(cleanedResponse),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {

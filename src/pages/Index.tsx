@@ -15,6 +15,13 @@ interface AnalysisResult {
   website: string;
   other_features: string;
   confidence: number;
+  similar_items?: {
+    name: string;
+    similarity: number;
+    purchase_url?: string;
+    price?: string;
+  }[];
+  usage_tips?: string[];
 }
 
 const Index = () => {

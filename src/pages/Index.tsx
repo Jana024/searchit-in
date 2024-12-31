@@ -7,22 +7,24 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+interface AnalysisResult {
+  name: string;
+  description: string;
+  confidence: number;
+  similar_items?: Array<{
+    name: string;
+    similarity: number;
+    purchase_url?: string;
+    price?: string;
+  }>;
+  category?: string;
+  usage_tips?: string[];
+}
+
 const Index = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [results, setResults] = useState<{
-    name: string;
-    description: string;
-    confidence: number;
-    similar_items?: Array<{
-      name: string;
-      similarity: number;
-      purchase_url?: string;
-      price?: string;
-    }>;
-    category?: string;
-    usage_tips?: string[];
-  } | null>(null);
+  const [results, setResults] = useState<AnalysisResult | null>(null);
 
   const handleImageSelect = (file: File) => {
     const imageUrl = URL.createObjectURL(file);

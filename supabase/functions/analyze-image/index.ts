@@ -71,6 +71,7 @@ function extractUsageTips(text: string): string[] {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -83,9 +84,10 @@ serve(async (req) => {
     const { image } = await req.json();
     const base64Image = image.replace(/^data:image\/\w+;base64,/, '');
 
-    console.log('Calling Gemini API for image analysis...');
+    console.log('Preparing Gemini API request...');
     
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-vision-latest/generateContent?key=' + GEMINI_API_KEY, {
+    // Updated Gemini API endpoint and request format
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=' + GEMINI_API_KEY, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -118,8 +120,8 @@ Usage Tips:
 Please be as specific and detailed as possible, including actual prices and working URLs when available.`
             },
             {
-              inline_data: {
-                mime_type: "image/jpeg",
+              inlineData: {
+                mimeType: "image/jpeg",
                 data: base64Image
               }
             }
@@ -134,6 +136,8 @@ Please be as specific and detailed as possible, including actual prices and work
       })
     });
 
+    console.log('Gemini API response status:', response.status);
+
     if (!response.ok) {
       const errorData = await response.text();
       console.error('Gemini API error response:', errorData);
@@ -141,7 +145,7 @@ Please be as specific and detailed as possible, including actual prices and work
     }
 
     const data = await response.json();
-    console.log('Gemini API response:', data);
+    console.log('Gemini API response:', JSON.stringify(data, null, 2));
     
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
       throw new Error('Invalid response format from Gemini API');

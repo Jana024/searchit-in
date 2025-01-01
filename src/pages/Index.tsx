@@ -15,6 +15,7 @@ interface AnalysisResult {
   website: string;
   other_features: string;
   confidence: number;
+  category?: string;
   similar_items?: {
     name: string;
     similarity: number;
@@ -30,10 +31,68 @@ const Index = () => {
   const [results, setResults] = useState<AnalysisResult | null>(null);
   const [activeView, setActiveView] = useState<"details" | "similar" | "tips">("details");
 
-  const handleImageSelect = (file: File) => {
-    const imageUrl = URL.createObjectURL(file);
-    setSelectedImage(imageUrl);
-    analyzeImage(file);
+  const preprocessImage = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+
+        // Target dimensions (maintain aspect ratio)
+        const maxDimension = 1024;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = (height / width) * maxDimension;
+            width = maxDimension;
+          } else {
+            width = (width / height) * maxDimension;
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Apply some basic image optimization
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Failed to create blob'));
+              return;
+            }
+            resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+          },
+          'image/jpeg',
+          0.9
+        );
+      };
+
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleImageSelect = async (file: File) => {
+    try {
+      const optimizedFile = await preprocessImage(file);
+      const imageUrl = URL.createObjectURL(optimizedFile);
+      setSelectedImage(imageUrl);
+      await analyzeImage(optimizedFile);
+    } catch (error) {
+      console.error('Image preprocessing error:', error);
+      toast.error('Failed to process image. Please try again.');
+    }
   };
 
   const analyzeImage = async (file: File) => {

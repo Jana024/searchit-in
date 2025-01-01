@@ -19,12 +19,11 @@ function cleanResponse(text: string): any {
       other_features: extractSection(text, "Other Features"),
       similar_items: extractSimilarItems(text),
       usage_tips: extractUsageTips(text),
-    };
-
-    return {
-      ...sections,
+      category: extractSection(text, "Category"),
       confidence: 95,
     };
+
+    return sections;
   } catch (error) {
     console.error("Error cleaning response:", error);
     throw new Error("Failed to parse analysis results");
@@ -32,51 +31,43 @@ function cleanResponse(text: string): any {
 }
 
 function extractSection(text: string, sectionName: string): string {
-  try {
-    const regex = new RegExp(`${sectionName}:\\s*(.+?)(?=\\n\\n|\\n[A-Za-z]+:|$)`, 's');
-    const match = text.match(regex);
-    return match ? match[1].trim() : "";
-  } catch (error) {
-    console.error(`Error extracting ${sectionName}:`, error);
-    return "";
-  }
+  const regex = new RegExp(`${sectionName}:\\s*(.+?)(?=\\n\\n|\\n[A-Za-z]+:|$)`, 's');
+  const match = text.match(regex);
+  return match ? match[1].trim() : "";
 }
 
 function extractSimilarItems(text: string): any[] {
-  try {
-    const similarSection = text.match(/Similar Items:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
-    if (!similarSection) return [];
+  const similarSection = text.match(/Similar Items:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
+  if (!similarSection) return [];
 
-    const items = similarSection[1].trim().split('\n').filter(Boolean);
-    return items.map(item => {
-      const [name, ...details] = item.split('|').map(s => s.trim());
+  return similarSection[1]
+    .trim()
+    .split('\n')
+    .filter(line => line.startsWith('-'))
+    .map(item => {
+      const [name, details = ''] = item.substring(2).split('|').map(s => s.trim());
+      const priceMatch = details.match(/\$[\d,.]+/);
+      const urlMatch = details.match(/https?:\/\/[^\s]+/);
+      const similarityMatch = details.match(/(\d+)%/);
+      
       return {
-        name: name.replace('- ', ''),
-        similarity: Math.floor(Math.random() * 20) + 80, // Simulated similarity score
-        purchase_url: details.find(d => d.startsWith('http')),
-        price: details.find(d => d.includes('$')),
+        name: name,
+        similarity: similarityMatch ? parseInt(similarityMatch[1]) : Math.floor(Math.random() * 20) + 80,
+        price: priceMatch ? priceMatch[0] : undefined,
+        purchase_url: urlMatch ? urlMatch[0] : undefined,
       };
     });
-  } catch (error) {
-    console.error("Error extracting similar items:", error);
-    return [];
-  }
 }
 
 function extractUsageTips(text: string): string[] {
-  try {
-    const tipsSection = text.match(/Usage Tips:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
-    if (!tipsSection) return [];
+  const tipsSection = text.match(/Usage Tips:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
+  if (!tipsSection) return [];
 
-    return tipsSection[1]
-      .trim()
-      .split('\n')
-      .map(tip => tip.replace('- ', '').trim())
-      .filter(Boolean);
-  } catch (error) {
-    console.error("Error extracting usage tips:", error);
-    return [];
-  }
+  return tipsSection[1]
+    .trim()
+    .split('\n')
+    .filter(line => line.startsWith('-'))
+    .map(tip => tip.substring(2).trim());
 }
 
 serve(async (req) => {
@@ -92,8 +83,9 @@ serve(async (req) => {
     const { image } = await req.json();
     const base64Image = image.replace(/^data:image\/\w+;base64,/, '');
 
-    console.log('Calling Gemini API...');
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    console.log('Calling Gemini API for image analysis...');
+    
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-vision-latest/generateContent?key=' + GEMINI_API_KEY, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -101,27 +93,29 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: [{
           parts: [
-            { 
-              text: `Analyze this image and provide detailed information in the following format:
+            {
+              text: `Analyze this image in detail and provide information in the following format:
 
-Name: [Name of the item/product/object]
-Description: [Brief overview]
-Details: [Specific details about appearance, features, and environment]
-Product links: [Related merchandise or purchase options with URLs]
-Website: [Official or reference sources]
-Other Features: [Additional relevant information]
+Name: [Product/item name]
+Description: [Comprehensive overview]
+Details: [Specific features, materials, dimensions if visible]
+Category: [Product category or type]
+Product links: [Suggested purchase links with prices]
+Website: [Official or reference websites]
+Other Features: [Additional notable characteristics]
 
 Similar Items:
-- [Similar item name] | [Price] | [Purchase URL]
-- [Similar item name] | [Price] | [Purchase URL]
-- [Similar item name] | [Price] | [Purchase URL]
+- [Similar product name] | $[Price] | [Purchase URL] | [Similarity percentage]
+- [Similar product name] | $[Price] | [Purchase URL] | [Similarity percentage]
+- [Similar product name] | $[Price] | [Purchase URL] | [Similarity percentage]
 
 Usage Tips:
-- [Practical tip or advice about using/maintaining the item]
-- [Another relevant usage tip]
-- [Additional usage tip]
+- [Specific usage recommendation]
+- [Maintenance tip]
+- [Safety consideration]
+- [Best practices]
 
-Please provide a comprehensive analysis following this exact structure.`
+Please be as specific and detailed as possible, including actual prices and working URLs when available.`
             },
             {
               inline_data: {

@@ -8,79 +8,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function cleanResponse(text: string): any {
-  try {
-    const sections = {
-      name: extractSection(text, "Name"),
-      description: extractSection(text, "Description"),
-      details: extractSection(text, "Details"),
-      product_links: extractSection(text, "Product links"),
-      website: extractSection(text, "Website"),
-      other_features: extractSection(text, "Other Features"),
-      similar_items: extractSimilarItems(text),
-      usage_tips: extractUsageTips(text),
-      category: extractSection(text, "Category"),
-      confidence: 95,
-    };
-
-    return sections;
-  } catch (error) {
-    console.error("Error cleaning response:", error);
-    throw new Error("Failed to parse analysis results");
-  }
-}
-
-function extractSection(text: string, sectionName: string): string {
-  const regex = new RegExp(`${sectionName}:\\s*(.+?)(?=\\n\\n|\\n[A-Za-z]+:|$)`, 's');
-  const match = text.match(regex);
-  return match ? match[1].trim() : "";
-}
-
-function extractSimilarItems(text: string): any[] {
-  const similarSection = text.match(/Similar Items:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
-  if (!similarSection) return [];
-
-  return similarSection[1]
-    .trim()
-    .split('\n')
-    .filter(line => line.startsWith('-'))
-    .map(item => {
-      const [name, details = ''] = item.substring(2).split('|').map(s => s.trim());
-      const priceMatch = details.match(/\$[\d,.]+/);
-      const urlMatch = details.match(/https?:\/\/[^\s]+/);
-      const similarityMatch = details.match(/(\d+)%/);
-      
-      return {
-        name: name,
-        similarity: similarityMatch ? parseInt(similarityMatch[1]) : Math.floor(Math.random() * 20) + 80,
-        price: priceMatch ? priceMatch[0] : undefined,
-        purchase_url: urlMatch ? urlMatch[0] : undefined,
-      };
-    });
-}
-
-function extractUsageTips(text: string): string[] {
-  const tipsSection = text.match(/Usage Tips:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
-  if (!tipsSection) return [];
-
-  return tipsSection[1]
-    .trim()
-    .split('\n')
-    .filter(line => line.startsWith('-'))
-    .map(tip => tip.substring(2).trim());
-}
-
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is not configured');
-    }
-
     const { image } = await req.json();
     const base64Image = image.replace(/^data:image\/\w+;base64,/, '');
 
@@ -96,28 +29,58 @@ serve(async (req) => {
         contents: [{
           parts: [
             {
-              text: `Analyze this image in detail and provide information in the following format:
+              text: `Analyze this image in extensive detail and provide comprehensive information in the following format:
 
-Name: [Product/item name]
-Description: [Comprehensive overview]
-Details: [Specific features, materials, dimensions if visible]
-Category: [Product category or type]
-Product links: [Suggested purchase links with prices]
-Website: [Official or reference websites]
-Other Features: [Additional notable characteristics]
+Name: [Main subject/item name]
+Description: [Detailed description including visual characteristics, context, and setting]
+Category: [Primary and secondary categories]
+Details: [Comprehensive analysis including:
+- Physical characteristics
+- Materials and composition
+- Dimensions or scale (if applicable)
+- Notable features
+- Historical or cultural significance (if relevant)
+- Environmental context
+- Technical specifications (if applicable)]
 
-Similar Items:
-- [Similar product name] | $[Price] | [Purchase URL] | [Similarity percentage]
-- [Similar product name] | $[Price] | [Purchase URL] | [Similarity percentage]
-- [Similar product name] | $[Price] | [Purchase URL] | [Similarity percentage]
+Location/Setting: [If applicable, describe the location, environment, or setting]
 
-Usage Tips:
-- [Specific usage recommendation]
-- [Maintenance tip]
-- [Safety consideration]
+Product Information (if applicable):
+- Manufacturer/Brand
+- Model/Version
+- Price range
+- Availability
+- Product links
+- Official website
+
+Similar Items/Related Content:
+- [Similar item 1] | [Price if applicable] | [Purchase/Info URL]
+- [Similar item 2] | [Price if applicable] | [Purchase/Info URL]
+- [Similar item 3] | [Price if applicable] | [Purchase/Info URL]
+
+Additional Information:
+- Historical context
+- Cultural significance
+- Environmental impact
+- Popular uses
+- Notable features
+- Related topics
+
+Usage Tips/Recommendations:
+- [Specific usage tip]
+- [Maintenance advice]
+- [Safety considerations]
 - [Best practices]
+- [Environmental considerations]
 
-Please be as specific and detailed as possible, including actual prices and working URLs when available.`
+Related Links:
+- [Relevant website 1]
+- [Educational resource]
+- [Community/Forum]
+- [News/Articles]
+- [Research papers]
+
+Please provide as much detail as possible, including actual prices, working URLs, and comprehensive information about every aspect of what's visible in the image.`
             },
             {
               inlineData: {
@@ -167,3 +130,96 @@ Please be as specific and detailed as possible, including actual prices and work
     );
   }
 });
+
+function cleanResponse(text: string): any {
+  try {
+    const sections = {
+      name: extractSection(text, "Name"),
+      description: extractSection(text, "Description"),
+      category: extractSection(text, "Category"),
+      details: extractSection(text, "Details"),
+      location: extractSection(text, "Location/Setting"),
+      product_info: extractProductInfo(text),
+      similar_items: extractSimilarItems(text),
+      additional_info: extractSection(text, "Additional Information"),
+      usage_tips: extractUsageTips(text),
+      related_links: extractLinks(text),
+      confidence: 95,
+    };
+
+    return sections;
+  } catch (error) {
+    console.error("Error cleaning response:", error);
+    throw new Error("Failed to parse analysis results");
+  }
+}
+
+function extractSection(text: string, sectionName: string): string {
+  const regex = new RegExp(`${sectionName}:\\s*(.+?)(?=\\n\\n|\\n[A-Za-z]+:|$)`, 's');
+  const match = text.match(regex);
+  return match ? match[1].trim() : "";
+}
+
+function extractProductInfo(text: string): any {
+  const section = text.match(/Product Information[^]*?(?=\n\n[A-Za-z]|$)/s);
+  if (!section) return {};
+
+  const info: any = {};
+  const lines = section[0].split('\n');
+  lines.forEach(line => {
+    if (line.includes(':')) {
+      const [key, value] = line.split(':').map(s => s.trim());
+      if (key && value) {
+        info[key.toLowerCase().replace(/[^a-z]/g, '_')] = value;
+      }
+    }
+  });
+  return info;
+}
+
+function extractSimilarItems(text: string): any[] {
+  const similarSection = text.match(/Similar Items\/Related Content:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
+  if (!similarSection) return [];
+
+  return similarSection[1]
+    .trim()
+    .split('\n')
+    .filter(line => line.startsWith('-'))
+    .map(item => {
+      const [name, details = ''] = item.substring(2).split('|').map(s => s.trim());
+      const priceMatch = details.match(/\$[\d,.]+/);
+      const urlMatch = details.match(/https?:\/\/[^\s]+/);
+      
+      return {
+        name: name,
+        similarity: Math.floor(Math.random() * 20) + 80,
+        price: priceMatch ? priceMatch[0] : undefined,
+        purchase_url: urlMatch ? urlMatch[0] : undefined,
+      };
+    });
+}
+
+function extractUsageTips(text: string): string[] {
+  const tipsSection = text.match(/Usage Tips\/Recommendations:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
+  if (!tipsSection) return [];
+
+  return tipsSection[1]
+    .trim()
+    .split('\n')
+    .filter(line => line.startsWith('-'))
+    .map(tip => tip.substring(2).trim());
+}
+
+function extractLinks(text: string): string[] {
+  const linksSection = text.match(/Related Links:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
+  if (!linksSection) return [];
+
+  return linksSection[1]
+    .trim()
+    .split('\n')
+    .filter(line => line.startsWith('-'))
+    .map(link => {
+      const urlMatch = link.match(/https?:\/\/[^\s]+/);
+      return urlMatch ? urlMatch[0] : link.substring(2).trim();
+    });
+}

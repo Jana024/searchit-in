@@ -1,136 +1,34 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const apiKey = Deno.env.get('GEMINI_API_KEY');
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+function cleanResponse(text: string): any {
   try {
-    console.log('Starting image analysis...');
-    const { image } = await req.json();
-    
-    if (!image) {
-      throw new Error('No image data provided');
-    }
-
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY not found in environment variables');
-    }
-
-    // Extract base64 image data (remove data URL prefix if present)
-    const base64Image = image.split(',')[1] || image;
-
-    // Log request details for debugging
-    console.log('Making request to Gemini API...');
-    console.log('API Key length:', apiKey.length);
-    console.log('Image data length:', base64Image.length);
-
-    const apiUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent';
-    
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            {
-              text: `Analyze this image in detail and provide comprehensive information in the following format:
-
-Name: [Main subject/item name]
-Description: [Detailed description including visual characteristics, context, and setting]
-Category: [Primary and secondary categories]
-Details: [Comprehensive analysis including physical characteristics, materials, dimensions, notable features]
-Product Information: [Brand, model, price range if applicable]
-Website: [Official or relevant website]
-Other Features: [Additional notable characteristics]
-
-Similar Items:
-[List 3-5 similar items with:
-- Name
-- Approximate price
-- Purchase URL (if applicable)]
-
-Usage Tips:
-[List 5-7 practical tips for using or interacting with the subject]`
-            },
-            {
-              inline_data: {
-                mime_type: "image/jpeg",
-                data: base64Image
-              }
-            }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 32,
-          topP: 1,
-          maxOutputTokens: 2048,
-        },
-      }),
-    });
-
-    console.log('Gemini API response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Gemini API error response:', errorText);
-      throw new Error(`Gemini API error: ${response.status} ${response.statusText}\nDetails: ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log('Received response from Gemini API');
-
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-      throw new Error('Invalid response format from Gemini API');
-    }
-
-    const textResponse = data.candidates[0].content.parts[0].text;
-    
-    // Parse the response into structured data
-    const parsedResponse = {
-      name: extractSection(textResponse, "Name"),
-      description: extractSection(textResponse, "Description"),
-      category: extractSection(textResponse, "Category"),
-      details: extractSection(textResponse, "Details"),
-      product_links: extractSection(textResponse, "Product Information"),
-      website: extractSection(textResponse, "Website"),
-      other_features: extractSection(textResponse, "Other Features"),
+    const sections = {
+      name: extractSection(text, "Name"),
+      description: extractSection(text, "Description"),
+      details: extractSection(text, "Details"),
+      product_links: extractSection(text, "Product links"),
+      website: extractSection(text, "Website"),
+      other_features: extractSection(text, "Other Features"),
+      similar_items: extractSimilarItems(text),
+      usage_tips: extractUsageTips(text),
+      category: extractSection(text, "Category"),
       confidence: 95,
-      similar_items: extractSimilarItems(textResponse),
-      usage_tips: extractUsageTips(textResponse),
     };
 
-    return new Response(JSON.stringify(parsedResponse), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
+    return sections;
   } catch (error) {
-    console.error('Error in analyze-image function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: 'An error occurred while processing the image analysis request.'
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    console.error("Error cleaning response:", error);
+    throw new Error("Failed to parse analysis results");
   }
-});
+}
 
 function extractSection(text: string, sectionName: string): string {
   const regex = new RegExp(`${sectionName}:\\s*(.+?)(?=\\n\\n|\\n[A-Za-z]+:|$)`, 's');
@@ -138,25 +36,25 @@ function extractSection(text: string, sectionName: string): string {
   return match ? match[1].trim() : "";
 }
 
-function extractSimilarItems(text: string): Array<{name: string; similarity: number; purchase_url?: string; price?: string}> {
+function extractSimilarItems(text: string): any[] {
   const similarSection = text.match(/Similar Items:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
   if (!similarSection) return [];
 
   return similarSection[1]
     .trim()
     .split('\n')
-    .filter(line => line.trim().length > 0 && !line.includes('Similar Items:'))
+    .filter(line => line.startsWith('-'))
     .map(item => {
-      const parts = item.split('-').map(part => part.trim());
-      const nameMatch = parts[0]?.match(/^[^($]+/);
-      const priceMatch = parts[0]?.match(/\$[\d,.]+/);
-      const urlMatch = parts.find(part => part.includes('http'));
+      const [name, details = ''] = item.substring(2).split('|').map(s => s.trim());
+      const priceMatch = details.match(/\$[\d,.]+/);
+      const urlMatch = details.match(/https?:\/\/[^\s]+/);
+      const similarityMatch = details.match(/(\d+)%/);
       
       return {
-        name: nameMatch ? nameMatch[0].trim() : item,
-        similarity: Math.floor(Math.random() * 20) + 80,
+        name: name,
+        similarity: similarityMatch ? parseInt(similarityMatch[1]) : Math.floor(Math.random() * 20) + 80,
         price: priceMatch ? priceMatch[0] : undefined,
-        purchase_url: urlMatch || undefined,
+        purchase_url: urlMatch ? urlMatch[0] : undefined,
       };
     });
 }
@@ -168,6 +66,106 @@ function extractUsageTips(text: string): string[] {
   return tipsSection[1]
     .trim()
     .split('\n')
-    .filter(line => line.trim().length > 0 && !line.includes('Usage Tips:'))
-    .map(tip => tip.replace(/^[-*]\s*/, '').trim());
+    .filter(line => line.startsWith('-'))
+    .map(tip => tip.substring(2).trim());
 }
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured');
+    }
+
+    const { image } = await req.json();
+    const base64Image = image.replace(/^data:image\/\w+;base64,/, '');
+
+    console.log('Calling Gemini API for image analysis...');
+    
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-vision-latest/generateContent?key=' + GEMINI_API_KEY, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            {
+              text: `Analyze this image in detail and provide information in the following format:
+
+Name: [Product/item name]
+Description: [Comprehensive overview]
+Details: [Specific features, materials, dimensions if visible]
+Category: [Product category or type]
+Product links: [Suggested purchase links with prices]
+Website: [Official or reference websites]
+Other Features: [Additional notable characteristics]
+
+Similar Items:
+- [Similar product name] | $[Price] | [Purchase URL] | [Similarity percentage]
+- [Similar product name] | $[Price] | [Purchase URL] | [Similarity percentage]
+- [Similar product name] | $[Price] | [Purchase URL] | [Similarity percentage]
+
+Usage Tips:
+- [Specific usage recommendation]
+- [Maintenance tip]
+- [Safety consideration]
+- [Best practices]
+
+Please be as specific and detailed as possible, including actual prices and working URLs when available.`
+            },
+            {
+              inline_data: {
+                mime_type: "image/jpeg",
+                data: base64Image
+              }
+            }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.4,
+          topK: 32,
+          topP: 1,
+          maxOutputTokens: 2048,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Gemini API error response:', errorData);
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('Gemini API response:', data);
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
+      throw new Error('Invalid response format from Gemini API');
+    }
+
+    const textResponse = data.candidates[0].content.parts[0].text;
+    const cleanedResponse = cleanResponse(textResponse);
+    console.log("Cleaned response:", cleanedResponse);
+
+    return new Response(
+      JSON.stringify(cleanedResponse),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        details: 'An error occurred while processing the image analysis request.'
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
+      }
+    );
+  }
+});

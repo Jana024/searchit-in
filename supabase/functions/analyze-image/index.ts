@@ -86,11 +86,11 @@ serve(async (req) => {
 
     console.log('Preparing Gemini API request...');
     
-    // Updated Gemini API endpoint and request format
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=' + GEMINI_API_KEY, {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-goog-api-key': GEMINI_API_KEY,
       },
       body: JSON.stringify({
         contents: [{
@@ -126,13 +126,7 @@ Please be as specific and detailed as possible, including actual prices and work
               }
             }
           ]
-        }],
-        generationConfig: {
-          temperature: 0.4,
-          topK: 32,
-          topP: 1,
-          maxOutputTokens: 2048,
-        }
+        }]
       })
     });
 

@@ -9,16 +9,20 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('Starting image analysis...');
     const { image } = await req.json();
-    const base64Image = image.replace(/^data:image\/\w+;base64,/, '');
+    
+    if (!image) {
+      throw new Error('No image data provided');
+    }
 
     console.log('Preparing Gemini API request...');
-    
     const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent', {
       method: 'POST',
       headers: {
@@ -34,125 +38,86 @@ serve(async (req) => {
 Name: [Main subject/item name]
 Description: [Detailed description including visual characteristics, context, and setting]
 Category: [Primary and secondary categories]
-Details: [Comprehensive analysis including:
-- Physical characteristics
-- Materials and composition
-- Dimensions or scale (if applicable)
-- Notable features
-- Historical or cultural significance (if relevant)
-- Environmental context
-- Technical specifications (if applicable)]
+Details: [Comprehensive analysis including physical characteristics, materials, dimensions, notable features]
+Product Information: [Brand, model, price range if applicable]
+Website: [Official or relevant website]
+Other Features: [Additional notable characteristics]
 
-Location/Setting: [If applicable, describe the location, environment, or setting]
+Similar Items:
+[List 3-5 similar items with:
+- Name
+- Approximate price
+- Purchase URL (if applicable)]
 
-Product Information (if applicable):
-- Manufacturer/Brand
-- Model/Version
-- Price range
-- Availability
-- Product links
-- Official website
-
-Similar Items/Related Content:
-- [Similar item 1] | [Price if applicable] | [Purchase/Info URL]
-- [Similar item 2] | [Price if applicable] | [Purchase/Info URL]
-- [Similar item 3] | [Price if applicable] | [Purchase/Info URL]
-
-Additional Information:
-- Historical context
-- Cultural significance
-- Environmental impact
-- Popular uses
-- Notable features
-- Related topics
-
-Usage Tips/Recommendations:
-- [Specific usage tip]
-- [Maintenance advice]
-- [Safety considerations]
-- [Best practices]
-- [Environmental considerations]
-
-Related Links:
-- [Relevant website 1]
-- [Educational resource]
-- [Community/Forum]
-- [News/Articles]
-- [Research papers]
-
-Please provide as much detail as possible, including actual prices, working URLs, and comprehensive information about every aspect of what's visible in the image.`
+Usage Tips:
+[List 5-7 practical tips for using or interacting with the subject]`
             },
             {
               inlineData: {
                 mimeType: "image/jpeg",
-                data: base64Image
+                data: image.split(',')[1]
               }
             }
           ]
-        }]
-      })
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 32,
+          topP: 1,
+          maxOutputTokens: 2048,
+        },
+      }),
     });
 
     console.log('Gemini API response status:', response.status);
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Gemini API error response:', errorData);
+      const errorText = await response.text();
+      console.error('Gemini API error response:', errorText);
       throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log('Gemini API response:', JSON.stringify(data, null, 2));
-    
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
+    console.log('Received response from Gemini API');
+
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
       throw new Error('Invalid response format from Gemini API');
     }
 
     const textResponse = data.candidates[0].content.parts[0].text;
-    const cleanedResponse = cleanResponse(textResponse);
-    console.log("Cleaned response:", cleanedResponse);
+    
+    // Parse the response into structured data
+    const parsedResponse = {
+      name: extractSection(textResponse, "Name"),
+      description: extractSection(textResponse, "Description"),
+      category: extractSection(textResponse, "Category"),
+      details: extractSection(textResponse, "Details"),
+      product_links: extractSection(textResponse, "Product Information"),
+      website: extractSection(textResponse, "Website"),
+      other_features: extractSection(textResponse, "Other Features"),
+      confidence: 95,
+      similar_items: extractSimilarItems(textResponse),
+      usage_tips: extractUsageTips(textResponse),
+    };
 
-    return new Response(
-      JSON.stringify(cleanedResponse),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify(parsedResponse), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in analyze-image function:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
         details: 'An error occurred while processing the image analysis request.'
       }),
       { 
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
       }
     );
   }
 });
-
-function cleanResponse(text: string): any {
-  try {
-    const sections = {
-      name: extractSection(text, "Name"),
-      description: extractSection(text, "Description"),
-      category: extractSection(text, "Category"),
-      details: extractSection(text, "Details"),
-      location: extractSection(text, "Location/Setting"),
-      product_info: extractProductInfo(text),
-      similar_items: extractSimilarItems(text),
-      additional_info: extractSection(text, "Additional Information"),
-      usage_tips: extractUsageTips(text),
-      related_links: extractLinks(text),
-      confidence: 95,
-    };
-
-    return sections;
-  } catch (error) {
-    console.error("Error cleaning response:", error);
-    throw new Error("Failed to parse analysis results");
-  }
-}
 
 function extractSection(text: string, sectionName: string): string {
   const regex = new RegExp(`${sectionName}:\\s*(.+?)(?=\\n\\n|\\n[A-Za-z]+:|$)`, 's');
@@ -160,66 +125,36 @@ function extractSection(text: string, sectionName: string): string {
   return match ? match[1].trim() : "";
 }
 
-function extractProductInfo(text: string): any {
-  const section = text.match(/Product Information[^]*?(?=\n\n[A-Za-z]|$)/s);
-  if (!section) return {};
-
-  const info: any = {};
-  const lines = section[0].split('\n');
-  lines.forEach(line => {
-    if (line.includes(':')) {
-      const [key, value] = line.split(':').map(s => s.trim());
-      if (key && value) {
-        info[key.toLowerCase().replace(/[^a-z]/g, '_')] = value;
-      }
-    }
-  });
-  return info;
-}
-
-function extractSimilarItems(text: string): any[] {
-  const similarSection = text.match(/Similar Items\/Related Content:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
+function extractSimilarItems(text: string): Array<{name: string; similarity: number; purchase_url?: string; price?: string}> {
+  const similarSection = text.match(/Similar Items:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
   if (!similarSection) return [];
 
   return similarSection[1]
     .trim()
     .split('\n')
-    .filter(line => line.startsWith('-'))
+    .filter(line => line.trim().length > 0 && !line.includes('Similar Items:'))
     .map(item => {
-      const [name, details = ''] = item.substring(2).split('|').map(s => s.trim());
-      const priceMatch = details.match(/\$[\d,.]+/);
-      const urlMatch = details.match(/https?:\/\/[^\s]+/);
+      const parts = item.split('-').map(part => part.trim());
+      const nameMatch = parts[0]?.match(/^[^($]+/);
+      const priceMatch = parts[0]?.match(/\$[\d,.]+/);
+      const urlMatch = parts.find(part => part.includes('http'));
       
       return {
-        name: name,
+        name: nameMatch ? nameMatch[0].trim() : item,
         similarity: Math.floor(Math.random() * 20) + 80,
         price: priceMatch ? priceMatch[0] : undefined,
-        purchase_url: urlMatch ? urlMatch[0] : undefined,
+        purchase_url: urlMatch || undefined,
       };
     });
 }
 
 function extractUsageTips(text: string): string[] {
-  const tipsSection = text.match(/Usage Tips\/Recommendations:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
+  const tipsSection = text.match(/Usage Tips:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
   if (!tipsSection) return [];
 
   return tipsSection[1]
     .trim()
     .split('\n')
-    .filter(line => line.startsWith('-'))
-    .map(tip => tip.substring(2).trim());
-}
-
-function extractLinks(text: string): string[] {
-  const linksSection = text.match(/Related Links:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
-  if (!linksSection) return [];
-
-  return linksSection[1]
-    .trim()
-    .split('\n')
-    .filter(line => line.startsWith('-'))
-    .map(link => {
-      const urlMatch = link.match(/https?:\/\/[^\s]+/);
-      return urlMatch ? urlMatch[0] : link.substring(2).trim();
-    });
+    .filter(line => line.trim().length > 0 && !line.includes('Usage Tips:'))
+    .map(tip => tip.replace(/^[-*]\s*/, '').trim());
 }

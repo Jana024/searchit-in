@@ -26,6 +26,8 @@ serve(async (req) => {
     }
 
     console.log('Preparing Gemini API request...');
+    
+    // Using the correct Gemini Vision API endpoint
     const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent', {
       method: 'POST',
       headers: {
@@ -36,7 +38,7 @@ serve(async (req) => {
         contents: [{
           parts: [
             {
-              text: `Analyze this image in extensive detail and provide comprehensive information in the following format:
+              text: `Analyze this image in detail and provide comprehensive information in the following format:
 
 Name: [Main subject/item name]
 Description: [Detailed description including visual characteristics, context, and setting]
@@ -58,7 +60,7 @@ Usage Tips:
             {
               inlineData: {
                 mimeType: "image/jpeg",
-                data: image.split(',')[1]
+                data: image.split(',')[1] // Remove the data URL prefix
               }
             }
           ]

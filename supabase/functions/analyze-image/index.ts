@@ -27,12 +27,13 @@ serve(async (req) => {
 
     console.log('Preparing Gemini API request...');
     
-    // Using the correct Gemini Vision API endpoint
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent', {
+    // Construct the URL with API key as query parameter
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=${apiKey}`;
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
       },
       body: JSON.stringify({
         contents: [{
@@ -58,8 +59,8 @@ Usage Tips:
 [List 5-7 practical tips for using or interacting with the subject]`
             },
             {
-              inlineData: {
-                mimeType: "image/jpeg",
+              inline_data: {
+                mime_type: "image/jpeg",
                 data: image.split(',')[1] // Remove the data URL prefix
               }
             }

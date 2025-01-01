@@ -31,7 +31,12 @@ serve(async (req) => {
     // Extract base64 image data (remove data URL prefix if present)
     const base64Image = image.split(',')[1] || image;
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent', {
+    // Log request details for debugging
+    console.log('Making request to Gemini API...');
+    console.log('API Key present:', !!apiKey);
+    console.log('Image data length:', base64Image.length);
+
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

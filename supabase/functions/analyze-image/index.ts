@@ -31,13 +31,16 @@ serve(async (req) => {
 
     // Log request details for debugging
     console.log('Making request to Gemini API...');
-    console.log('API Key present:', !!apiKey);
+    console.log('API Key length:', apiKey.length);
     console.log('Image data length:', base64Image.length);
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=' + apiKey, {
+    const apiUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent';
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
       },
       body: JSON.stringify({
         contents: [{
@@ -84,7 +87,7 @@ Usage Tips:
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Gemini API error response:', errorText);
-      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}\nDetails: ${errorText}`);
     }
 
     const data = await response.json();

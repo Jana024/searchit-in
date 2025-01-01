@@ -26,8 +26,6 @@ serve(async (req) => {
       throw new Error('GEMINI_API_KEY not found in environment variables');
     }
 
-    console.log('Preparing Gemini API request...');
-    
     // Extract base64 image data (remove data URL prefix if present)
     const base64Image = image.split(',')[1] || image;
 
@@ -36,11 +34,10 @@ serve(async (req) => {
     console.log('API Key present:', !!apiKey);
     console.log('Image data length:', base64Image.length);
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=' + apiKey, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
       },
       body: JSON.stringify({
         contents: [{

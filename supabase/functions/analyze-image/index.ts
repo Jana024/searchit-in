@@ -9,7 +9,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -29,35 +28,78 @@ serve(async (req) => {
 
     console.log('Received image data, preparing API request...');
 
-    // Extract base64 data
     const base64Data = image.split(',')[1];
     
-    const prompt = `Analyze this image in detail and provide information in the following format:
+    const prompt = `Analyze this image in detail and provide comprehensive information in the following format:
 
 Name: [Product/item name]
-Description: [Comprehensive overview]
-Details: [Specific features, materials, dimensions if visible]
-Category: [Product category or type]
-Product links: [Suggested purchase links with prices]
-Website: [Official or reference websites]
-Other Features: [Additional notable characteristics]
+Description: [Detailed overview including physical characteristics, purpose, and notable features]
+Category: [Main category and subcategories if applicable]
 
-Similar Items:
-- [Similar product name] | $[Price] | [Purchase URL] | [Similarity percentage]
-- [Similar product name] | $[Price] | [Purchase URL] | [Similarity percentage]
-- [Similar product name] | $[Price] | [Purchase URL] | [Similarity percentage]
+Historical Context:
+- [Origin and development history]
+- [Cultural significance if any]
+- [Notable milestones or evolution]
 
-Usage Tips:
-- [Specific usage recommendation]
-- [Maintenance tip]
-- [Safety consideration]
+Technical Details:
+- [Specifications, materials, dimensions if visible]
+- [Manufacturing process if relevant]
+- [Technical features and capabilities]
+
+Advantages:
+- [List key benefits and positive aspects]
+- [Unique selling points]
+- [Value propositions]
+
+Disadvantages:
+- [Potential limitations]
+- [Known issues or concerns]
+- [Areas for improvement]
+
+Usage & Applications:
+- [Primary uses]
+- [Secondary applications]
+- [Industry-specific uses]
+
+Market Information:
+- [Price range]
+- [Target audience]
+- [Market positioning]
+
+Product Links:
+- [Official website or manufacturer]
+- [Authorized retailers]
+- [Online marketplaces]
+
+Similar Products:
+- [Name] | [Price] | [Purchase URL] | [Similarity %]
+- [Name] | [Price] | [Purchase URL] | [Similarity %]
+- [Name] | [Price] | [Purchase URL] | [Similarity %]
+
+Maintenance & Care:
+- [Cleaning instructions]
+- [Storage recommendations]
+- [Maintenance tips]
+
+Environmental Impact:
+- [Sustainability factors]
+- [Eco-friendly features]
+- [Disposal considerations]
+
+Safety Considerations:
+- [Safety guidelines]
+- [Precautions]
+- [Warning information]
+
+Expert Tips:
+- [Professional recommendations]
 - [Best practices]
+- [Usage optimization]
 
-Please be as specific and detailed as possible, including actual prices and working URLs when available.`;
+Please be as specific and detailed as possible, including actual prices, working URLs, and verified information when available.`;
 
     console.log('Making request to Gemini API...');
 
-    // Updated to use gemini-1.5-flash model
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
@@ -79,7 +121,7 @@ Please be as specific and detailed as possible, including actual prices and work
           temperature: 0.4,
           topK: 32,
           topP: 1,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 4096,
         },
       }),
     });
@@ -101,17 +143,22 @@ Please be as specific and detailed as possible, including actual prices and work
 
     const textResponse = data.candidates[0].content.parts[0].text;
     
-    // Parse the response into structured data
     const sections = {
       name: extractSection(textResponse, "Name"),
       description: extractSection(textResponse, "Description"),
-      details: extractSection(textResponse, "Details"),
-      product_links: extractSection(textResponse, "Product links"),
-      website: extractSection(textResponse, "Website"),
-      other_features: extractSection(textResponse, "Other Features"),
-      similar_items: extractSimilarItems(textResponse),
-      usage_tips: extractUsageTips(textResponse),
       category: extractSection(textResponse, "Category"),
+      historical_context: extractListSection(textResponse, "Historical Context"),
+      technical_details: extractListSection(textResponse, "Technical Details"),
+      advantages: extractListSection(textResponse, "Advantages"),
+      disadvantages: extractListSection(textResponse, "Disadvantages"),
+      usage_applications: extractListSection(textResponse, "Usage & Applications"),
+      market_information: extractListSection(textResponse, "Market Information"),
+      product_links: extractSection(textResponse, "Product Links"),
+      similar_items: extractSimilarItems(textResponse),
+      maintenance_care: extractListSection(textResponse, "Maintenance & Care"),
+      environmental_impact: extractListSection(textResponse, "Environmental Impact"),
+      safety_considerations: extractListSection(textResponse, "Safety Considerations"),
+      expert_tips: extractListSection(textResponse, "Expert Tips"),
       confidence: 95,
     };
 
@@ -142,8 +189,19 @@ function extractSection(text: string, sectionName: string): string {
   return match ? match[1].trim() : "";
 }
 
+function extractListSection(text: string, sectionName: string): string[] {
+  const section = text.match(new RegExp(`${sectionName}:([\\s\\S]*?)(?=\\n\\n[A-Za-z]+:|$)`));
+  if (!section) return [];
+  
+  return section[1]
+    .trim()
+    .split('\n')
+    .filter(line => line.startsWith('-'))
+    .map(item => item.substring(2).trim());
+}
+
 function extractSimilarItems(text: string): any[] {
-  const similarSection = text.match(/Similar Items:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
+  const similarSection = text.match(/Similar Products:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
   if (!similarSection) return [];
 
   return similarSection[1]
@@ -163,15 +221,4 @@ function extractSimilarItems(text: string): any[] {
         purchase_url: urlMatch ? urlMatch[0] : undefined,
       };
     });
-}
-
-function extractUsageTips(text: string): string[] {
-  const tipsSection = text.match(/Usage Tips:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
-  if (!tipsSection) return [];
-
-  return tipsSection[1]
-    .trim()
-    .split('\n')
-    .filter(line => line.startsWith('-'))
-    .map(tip => tip.substring(2).trim());
 }

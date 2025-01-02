@@ -7,12 +7,14 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AnalysisResult } from "@/components/results/types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalysisResult | null>(null);
   const [activeView, setActiveView] = useState<"details" | "similar" | "tips">("details");
+  const isMobile = useIsMobile();
 
   const preprocessImage = async (file: File): Promise<File> => {
     return new Promise((resolve, reject) => {
@@ -130,24 +132,24 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <div className="container max-w-5xl py-12">
-        <div className="text-center mb-12 space-y-4">
-          <h1 className="text-5xl font-bold text-gray-900 animate-fade-in">
+      <div className="container px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-7xl mx-auto">
+        <div className="text-center mb-8 sm:mb-12 space-y-3 sm:space-y-4">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 animate-fade-in">
             SearchIt.in
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto animate-fade-in delay-100">
+          <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto animate-fade-in">
             Upload or capture a photo to discover detailed information about any object
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 items-start">
+        <div className="grid gap-6 lg:gap-8 lg:grid-cols-2 items-start">
           <div className="space-y-6">
             {!selectedImage ? (
-              <Card className="p-6 animate-fade-in">
+              <Card className="p-4 sm:p-6 animate-fade-in">
                 <ImageUpload onImageSelect={handleImageSelect} />
               </Card>
             ) : (
-              <Card className="p-6 animate-fade-in">
+              <Card className="p-4 sm:p-6 animate-fade-in">
                 <ImagePreview
                   imageUrl={selectedImage}
                   onRemove={() => {
@@ -161,8 +163,12 @@ const Index = () => {
 
           <div className="space-y-6">
             {(isAnalyzing || results) && (
-              <Card className="p-6 animate-fade-in">
-                <Tabs defaultValue="details" className="w-full" onValueChange={(value) => setActiveView(value as "details" | "similar" | "tips")}>
+              <Card className="p-4 sm:p-6 animate-fade-in">
+                <Tabs 
+                  defaultValue="details" 
+                  className="w-full" 
+                  onValueChange={(value) => setActiveView(value as "details" | "similar" | "tips")}
+                >
                   <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="details">Details</TabsTrigger>
                     <TabsTrigger value="similar">Similar</TabsTrigger>
@@ -173,6 +179,7 @@ const Index = () => {
                       isLoading={isAnalyzing}
                       results={results}
                       view="details"
+                      isMobile={isMobile}
                     />
                   </TabsContent>
                   <TabsContent value="similar">
@@ -180,6 +187,7 @@ const Index = () => {
                       isLoading={isAnalyzing}
                       results={results}
                       view="similar"
+                      isMobile={isMobile}
                     />
                   </TabsContent>
                   <TabsContent value="tips">
@@ -187,6 +195,7 @@ const Index = () => {
                       isLoading={isAnalyzing}
                       results={results}
                       view="tips"
+                      isMobile={isMobile}
                     />
                   </TabsContent>
                 </Tabs>

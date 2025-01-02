@@ -5,28 +5,29 @@ import type { SimilarItem } from "./types";
 
 interface SimilarItemsSectionProps {
   items?: SimilarItem[];
+  isMobile?: boolean;
 }
 
-export const SimilarItemsSection = ({ items }: SimilarItemsSectionProps) => (
-  <ScrollArea className="h-[600px] pr-4">
-    <div className="space-y-4">
+export const SimilarItemsSection = ({ items, isMobile }: SimilarItemsSectionProps) => (
+  <ScrollArea className={`${isMobile ? 'h-[400px]' : 'h-[600px]'} pr-4`}>
+    <div className="space-y-3 sm:space-y-4">
       {items?.map((item, index) => (
-        <div key={index} className="p-4 border rounded-lg hover:border-primary transition-colors">
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="font-semibold">{item.name}</h4>
-            <Badge variant="secondary">{item.similarity}% match</Badge>
+        <div key={index} className="p-3 sm:p-4 border rounded-lg hover:border-primary transition-colors">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
+            <h4 className="font-semibold text-sm sm:text-base">{item.name}</h4>
+            <Badge variant="secondary" className="w-fit">{item.similarity}% match</Badge>
           </div>
           {item.price && (
-            <p className="text-sm text-gray-600 font-medium">{item.price}</p>
+            <p className="text-xs sm:text-sm text-gray-600 font-medium">{item.price}</p>
           )}
           {item.purchase_url && (
             <a
               href={item.purchase_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-primary hover:underline flex items-center gap-1 mt-2"
+              className="text-xs sm:text-sm text-primary hover:underline flex items-center gap-1 mt-2"
             >
-              View Product <ExternalLink className="h-4 w-4" />
+              View Product <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
             </a>
           )}
         </div>

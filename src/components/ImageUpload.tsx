@@ -90,13 +90,13 @@ export const ImageUpload = ({ onImageSelect }: ImageUploadProps) => {
           ref={videoRef}
           autoPlay
           playsInline
-          className="w-full h-64 object-cover rounded-lg"
+          className="w-full h-48 sm:h-64 object-cover rounded-lg"
         />
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4">
-          <Button onClick={capturePhoto} variant="default">
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col sm:flex-row gap-2 sm:gap-4">
+          <Button onClick={capturePhoto} variant="default" className="w-full sm:w-auto">
             Take Photo
           </Button>
-          <Button onClick={stopCamera} variant="destructive">
+          <Button onClick={stopCamera} variant="destructive" className="w-full sm:w-auto">
             Cancel
           </Button>
         </div>
@@ -106,7 +106,7 @@ export const ImageUpload = ({ onImageSelect }: ImageUploadProps) => {
 
   return (
     <div
-      className={`p-8 border-2 border-dashed rounded-lg transition-colors ${
+      className={`p-4 sm:p-8 border-2 border-dashed rounded-lg transition-colors ${
         isDragging ? "border-primary bg-primary/5" : "border-gray-300"
       }`}
       onDrop={handleDrop}
@@ -125,17 +125,17 @@ export const ImageUpload = ({ onImageSelect }: ImageUploadProps) => {
       />
       <div className="flex flex-col items-center gap-4">
         <div className="text-center">
-          <h3 className="text-lg font-semibold mb-2">
+          <h3 className="text-base sm:text-lg font-semibold mb-2">
             Drag & drop an image or
           </h3>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-xs sm:text-sm text-gray-500 mb-4">
             Supported formats: JPG, PNG, GIF
           </p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
           <Button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             <Upload size={20} />
             Choose File
@@ -143,7 +143,7 @@ export const ImageUpload = ({ onImageSelect }: ImageUploadProps) => {
           <Button
             onClick={startCamera}
             variant="outline"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             <Camera size={20} />
             Use Camera

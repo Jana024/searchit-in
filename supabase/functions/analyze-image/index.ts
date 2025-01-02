@@ -126,8 +126,6 @@ Please be as specific and detailed as possible, including actual prices, working
       }),
     });
 
-    console.log('Received response from Gemini API');
-
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Gemini API error response:', errorText);
@@ -162,7 +160,7 @@ Please be as specific and detailed as possible, including actual prices, working
       confidence: 95,
     };
 
-    console.log('Successfully processed image analysis');
+    console.log('Successfully processed image analysis:', sections);
 
     return new Response(JSON.stringify(sections), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

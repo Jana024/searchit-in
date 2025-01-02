@@ -6,24 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-interface AnalysisResult {
-  name: string;
-  description: string;
-  details: string;
-  product_links: string;
-  website: string;
-  other_features: string;
-  confidence: number;
-  category?: string;
-  similar_items?: {
-    name: string;
-    similarity: number;
-    purchase_url?: string;
-    price?: string;
-  }[];
-  usage_tips?: string[];
-}
+import type { AnalysisResult } from "@/components/results/types";
 
 const Index = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -114,6 +97,7 @@ const Index = () => {
             throw error;
           }
 
+          console.log('Analysis results:', data);
           setResults(data);
 
           const user = await supabase.auth.getUser();

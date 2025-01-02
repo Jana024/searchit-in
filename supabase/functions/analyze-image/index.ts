@@ -81,11 +81,13 @@ Be specific and detailed in your analysis.`;
 
     console.log('Making request to Gemini API...');
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision/generateContent', {
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=${GEMINI_API_KEY}`;
+    console.log('Using API URL:', apiUrl);
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': GEMINI_API_KEY,
       },
       body: JSON.stringify({
         contents: [{

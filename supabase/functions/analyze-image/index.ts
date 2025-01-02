@@ -15,14 +15,19 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting image analysis...');
+    
     if (!GEMINI_API_KEY) {
       throw new Error('GEMINI_API_KEY is not configured');
     }
 
     const { image } = await req.json();
     
-    // Log the request
-    console.log('Received image analysis request');
+    if (!image) {
+      throw new Error('No image data provided');
+    }
+
+    console.log('Received image data, preparing API request...');
 
     // Extract base64 data
     const base64Data = image.split(',')[1];
@@ -50,8 +55,8 @@ Usage Tips:
 
 Please be as specific and detailed as possible, including actual prices and working URLs when available.`;
 
-    // Make request to Gemini API
-    console.log('Calling Gemini API...');
+    console.log('Making request to Gemini API...');
+
     const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro-vision-latest/generateContent', {
       method: 'POST',
       headers: {
@@ -79,6 +84,8 @@ Please be as specific and detailed as possible, including actual prices and work
       }),
     });
 
+    console.log('Received response from Gemini API');
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Gemini API error response:', errorText);
@@ -86,57 +93,48 @@ Please be as specific and detailed as possible, including actual prices and work
     }
 
     const data = await response.json();
-    console.log('Received response from Gemini API');
+    console.log('Successfully parsed Gemini API response');
 
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
       throw new Error('Invalid response format from Gemini API');
     }
 
     const textResponse = data.candidates[0].content.parts[0].text;
-    const cleanedResponse = cleanResponse(textResponse);
     
+    // Parse the response into structured data
+    const sections = {
+      name: extractSection(textResponse, "Name"),
+      description: extractSection(textResponse, "Description"),
+      details: extractSection(textResponse, "Details"),
+      product_links: extractSection(textResponse, "Product links"),
+      website: extractSection(textResponse, "Website"),
+      other_features: extractSection(textResponse, "Other Features"),
+      similar_items: extractSimilarItems(textResponse),
+      usage_tips: extractUsageTips(textResponse),
+      category: extractSection(textResponse, "Category"),
+      confidence: 95,
+    };
+
     console.log('Successfully processed image analysis');
 
-    return new Response(
-      JSON.stringify(cleanedResponse),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify(sections), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   } catch (error) {
     console.error('Error in analyze-image function:', error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message,
-        details: 'An error occurred while processing the image analysis request.'
+        details: 'An error occurred while processing the image analysis request.',
       }),
-      { 
+      {
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
       }
     );
   }
 });
-
-function cleanResponse(text: string): any {
-  try {
-    const sections = {
-      name: extractSection(text, "Name"),
-      description: extractSection(text, "Description"),
-      details: extractSection(text, "Details"),
-      product_links: extractSection(text, "Product links"),
-      website: extractSection(text, "Website"),
-      other_features: extractSection(text, "Other Features"),
-      similar_items: extractSimilarItems(text),
-      usage_tips: extractUsageTips(text),
-      category: extractSection(text, "Category"),
-      confidence: 95,
-    };
-
-    return sections;
-  } catch (error) {
-    console.error("Error cleaning response:", error);
-    throw new Error("Failed to parse analysis results");
-  }
-}
 
 function extractSection(text: string, sectionName: string): string {
   const regex = new RegExp(`${sectionName}:\\s*(.+?)(?=\\n\\n|\\n[A-Za-z]+:|$)`, 's');

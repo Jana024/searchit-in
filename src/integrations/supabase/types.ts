@@ -12,23 +12,29 @@ export type Database = {
       analysis_history: {
         Row: {
           created_at: string | null
+          detailed_description: string | null
           id: string
           image_url: string
           results: Json
+          similar_items: Json | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
+          detailed_description?: string | null
           id?: string
           image_url: string
           results: Json
+          similar_items?: Json | null
           user_id: string
         }
         Update: {
           created_at?: string | null
+          detailed_description?: string | null
           id?: string
           image_url?: string
           results?: Json
+          similar_items?: Json | null
           user_id?: string
         }
         Relationships: []

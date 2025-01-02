@@ -81,7 +81,7 @@ Be specific and detailed in your analysis.`;
 
     console.log('Making request to Gemini API...');
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=${GEMINI_API_KEY}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     console.log('Using API URL:', apiUrl);
 
     const response = await fetch(apiUrl, {

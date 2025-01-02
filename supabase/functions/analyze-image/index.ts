@@ -9,6 +9,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -80,10 +81,11 @@ Be specific and detailed in your analysis.`;
 
     console.log('Making request to Gemini API...');
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash/generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash/generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GEMINI_API_KEY}`,
       },
       body: JSON.stringify({
         contents: [{
@@ -122,6 +124,7 @@ Be specific and detailed in your analysis.`;
     const textResponse = data.candidates[0].content.parts[0].text;
     console.log('Raw API response:', textResponse);
     
+    // Parse the response into structured data
     const sections = {
       name: extractSection(textResponse, "Name") || "Unknown Item",
       description: extractSection(textResponse, "Description") || "No description available",

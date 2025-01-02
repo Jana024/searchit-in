@@ -1,4 +1,4 @@
-import { Loader2, ExternalLink, Info, ShoppingCart, Lightbulb, History, Tool, ThumbsUp, ThumbsDown, Target, Recycle, Shield, Wrench } from "lucide-react";
+import { Loader2, ExternalLink, Info, ShoppingCart, Lightbulb, History, Settings, ThumbsUp, ThumbsDown, Target, Recycle, Shield, Wrench } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -83,7 +83,7 @@ export const ResultsDisplay = ({ isLoading, results, view }: ResultsDisplayProps
             {results.technical_details && results.technical_details.length > 0 && (
               <div>
                 <h4 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <Tool className="h-4 w-4" />
+                  <Settings className="h-4 w-4" />
                   Technical Details
                 </h4>
                 <ul className="list-disc pl-5 space-y-2">

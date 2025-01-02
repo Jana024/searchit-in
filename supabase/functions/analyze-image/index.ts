@@ -30,77 +30,57 @@ serve(async (req) => {
 
     const base64Data = image.split(',')[1];
     
-    const prompt = `Analyze this image in detail and provide comprehensive information in the following format:
+    const prompt = `Analyze this image in detail and provide comprehensive information about what you see. Format your response exactly like this, maintaining the exact structure:
 
 Name: [Product/item name]
-Description: [Detailed overview including physical characteristics, purpose, and notable features]
-Category: [Main category and subcategories if applicable]
+Description: [2-3 sentences describing what you see]
+Category: [Main category]
 
 Historical Context:
-- [Origin and development history]
-- [Cultural significance if any]
-- [Notable milestones or evolution]
+- [Key historical point 1]
+- [Key historical point 2]
+- [Key historical point 3]
 
 Technical Details:
-- [Specifications, materials, dimensions if visible]
-- [Manufacturing process if relevant]
-- [Technical features and capabilities]
+- [Specification 1]
+- [Specification 2]
+- [Specification 3]
 
 Advantages:
-- [List key benefits and positive aspects]
-- [Unique selling points]
-- [Value propositions]
+- [Advantage 1]
+- [Advantage 2]
+- [Advantage 3]
 
 Disadvantages:
-- [Potential limitations]
-- [Known issues or concerns]
-- [Areas for improvement]
+- [Disadvantage 1]
+- [Disadvantage 2]
+- [Disadvantage 3]
 
 Usage & Applications:
-- [Primary uses]
-- [Secondary applications]
-- [Industry-specific uses]
+- [Usage 1]
+- [Usage 2]
+- [Usage 3]
 
 Market Information:
-- [Price range]
-- [Target audience]
-- [Market positioning]
+- [Price range if applicable]
+- [Target market]
+- [Availability]
 
-Product Links:
-- [Official website or manufacturer]
-- [Authorized retailers]
-- [Online marketplaces]
-
-Similar Products:
-- [Name] | [Price] | [Purchase URL] | [Similarity %]
-- [Name] | [Price] | [Purchase URL] | [Similarity %]
-- [Name] | [Price] | [Purchase URL] | [Similarity %]
-
-Maintenance & Care:
-- [Cleaning instructions]
-- [Storage recommendations]
-- [Maintenance tips]
-
-Environmental Impact:
-- [Sustainability factors]
-- [Eco-friendly features]
-- [Disposal considerations]
-
-Safety Considerations:
-- [Safety guidelines]
-- [Precautions]
-- [Warning information]
+Similar Items:
+- [Similar item 1] | [Estimated price] | [Link if available] | [90%]
+- [Similar item 2] | [Estimated price] | [Link if available] | [85%]
+- [Similar item 3] | [Estimated price] | [Link if available] | [80%]
 
 Expert Tips:
-- [Professional recommendations]
-- [Best practices]
-- [Usage optimization]
+- [Expert tip 1]
+- [Expert tip 2]
+- [Expert tip 3]
 
-Please be as specific and detailed as possible, including actual prices, working URLs, and verified information when available.`;
+Be specific and detailed in your analysis.`;
 
     console.log('Making request to Gemini API...');
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash/generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -133,17 +113,18 @@ Please be as specific and detailed as possible, including actual prices, working
     }
 
     const data = await response.json();
-    console.log('Successfully parsed Gemini API response');
+    console.log('Successfully received Gemini API response');
 
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
       throw new Error('Invalid response format from Gemini API');
     }
 
     const textResponse = data.candidates[0].content.parts[0].text;
+    console.log('Raw API response:', textResponse);
     
     const sections = {
-      name: extractSection(textResponse, "Name"),
-      description: extractSection(textResponse, "Description"),
+      name: extractSection(textResponse, "Name") || "Unknown Item",
+      description: extractSection(textResponse, "Description") || "No description available",
       category: extractSection(textResponse, "Category"),
       historical_context: extractListSection(textResponse, "Historical Context"),
       technical_details: extractListSection(textResponse, "Technical Details"),
@@ -151,16 +132,12 @@ Please be as specific and detailed as possible, including actual prices, working
       disadvantages: extractListSection(textResponse, "Disadvantages"),
       usage_applications: extractListSection(textResponse, "Usage & Applications"),
       market_information: extractListSection(textResponse, "Market Information"),
-      product_links: extractSection(textResponse, "Product Links"),
       similar_items: extractSimilarItems(textResponse),
-      maintenance_care: extractListSection(textResponse, "Maintenance & Care"),
-      environmental_impact: extractListSection(textResponse, "Environmental Impact"),
-      safety_considerations: extractListSection(textResponse, "Safety Considerations"),
       expert_tips: extractListSection(textResponse, "Expert Tips"),
       confidence: 95,
     };
 
-    console.log('Successfully processed image analysis:', sections);
+    console.log('Processed analysis results:', sections);
 
     return new Response(JSON.stringify(sections), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -194,29 +171,25 @@ function extractListSection(text: string, sectionName: string): string[] {
   return section[1]
     .trim()
     .split('\n')
-    .filter(line => line.startsWith('-'))
-    .map(item => item.substring(2).trim());
+    .filter(line => line.trim().startsWith('-'))
+    .map(item => item.substring(1).trim());
 }
 
 function extractSimilarItems(text: string): any[] {
-  const similarSection = text.match(/Similar Products:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
+  const similarSection = text.match(/Similar Items:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
   if (!similarSection) return [];
 
   return similarSection[1]
     .trim()
     .split('\n')
-    .filter(line => line.startsWith('-'))
+    .filter(line => line.trim().startsWith('-'))
     .map(item => {
-      const [name, details = ''] = item.substring(2).split('|').map(s => s.trim());
-      const priceMatch = details.match(/\$[\d,.]+/);
-      const urlMatch = details.match(/https?:\/\/[^\s]+/);
-      const similarityMatch = details.match(/(\d+)%/);
-      
+      const parts = item.substring(1).split('|').map(s => s.trim());
       return {
-        name: name,
-        similarity: similarityMatch ? parseInt(similarityMatch[1]) : Math.floor(Math.random() * 20) + 80,
-        price: priceMatch ? priceMatch[0] : undefined,
-        purchase_url: urlMatch ? urlMatch[0] : undefined,
+        name: parts[0] || '',
+        price: parts[1] || '',
+        purchase_url: parts[2] || '',
+        similarity: parseInt(parts[3]) || 85,
       };
     });
 }

@@ -57,11 +57,11 @@ Please be as specific and detailed as possible, including actual prices and work
 
     console.log('Making request to Gemini API...');
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro-vision-latest/generateContent', {
+    // Updated API endpoint and request format
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': GEMINI_API_KEY,
       },
       body: JSON.stringify({
         contents: [{

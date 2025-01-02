@@ -9,9 +9,10 @@ interface ResultsDisplayProps {
   isLoading: boolean;
   results?: AnalysisResult | null;
   view: "details" | "similar" | "tips";
+  isMobile?: boolean;
 }
 
-export const ResultsDisplay = ({ isLoading, results, view }: ResultsDisplayProps) => {
+export const ResultsDisplay = ({ isLoading, results, view, isMobile }: ResultsDisplayProps) => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -29,6 +30,8 @@ export const ResultsDisplay = ({ isLoading, results, view }: ResultsDisplayProps
 
   console.log('Rendering results:', results);
 
+  const scrollAreaHeight = isMobile ? "h-[400px]" : "h-[600px]";
+
   const renderDetails = () => (
     <Card>
       <CardHeader>
@@ -43,7 +46,7 @@ export const ResultsDisplay = ({ isLoading, results, view }: ResultsDisplayProps
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[600px] pr-4">
+        <ScrollArea className={scrollAreaHeight + " pr-4"}>
           <div className="space-y-6">
             {results.description && (
               <div>
@@ -144,7 +147,7 @@ export const ResultsDisplay = ({ isLoading, results, view }: ResultsDisplayProps
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[600px]">
+        <ScrollArea className={scrollAreaHeight}>
           <div className="space-y-4">
             {results.similar_items && results.similar_items.map((item, index) => (
               <div key={index} className="p-4 border rounded-lg">
@@ -181,7 +184,7 @@ export const ResultsDisplay = ({ isLoading, results, view }: ResultsDisplayProps
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[600px]">
+        <ScrollArea className={scrollAreaHeight}>
           <div className="space-y-4">
             {results.expert_tips && results.expert_tips.map((tip, index) => (
               <div key={index} className="p-4 border rounded-lg">

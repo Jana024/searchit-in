@@ -37,8 +37,8 @@
 
 .card {
   padding: 2em;
-  background-color: hsl(220 20% 12%);
-  border: 1px solid hsl(220 20% 20%);
+  background-color: hsl(0 0% 3%);
+  border: 1px solid hsl(0 0% 20%);
   border-radius: var(--radius);
 }
 

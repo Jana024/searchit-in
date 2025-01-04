@@ -13,7 +13,7 @@ const Index = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalysisResult | null>(null);
-  const [activeView, setActiveView] = useState<"details" | "similar" | "tips">("details");
+  const [activeView, setActiveView] = useState<"details" | "tips">("details");
   const isMobile = useIsMobile();
 
   const preprocessImage = async (file: File): Promise<File> => {
@@ -131,13 +131,13 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="container px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-7xl mx-auto">
         <div className="text-center mb-8 sm:mb-12 space-y-3 sm:space-y-4">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 animate-fade-in">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground animate-fade-in">
             SearchIt.in
           </h1>
-          <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto animate-fade-in">
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
             Upload or capture a photo to discover detailed information about any object
           </p>
         </div>
@@ -167,11 +167,10 @@ const Index = () => {
                 <Tabs 
                   defaultValue="details" 
                   className="w-full" 
-                  onValueChange={(value) => setActiveView(value as "details" | "similar" | "tips")}
+                  onValueChange={(value) => setActiveView(value as "details" | "tips")}
                 >
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="details">Details</TabsTrigger>
-                    <TabsTrigger value="similar">Similar</TabsTrigger>
                     <TabsTrigger value="tips">Tips</TabsTrigger>
                   </TabsList>
                   <TabsContent value="details">
@@ -179,14 +178,6 @@ const Index = () => {
                       isLoading={isAnalyzing}
                       results={results}
                       view="details"
-                      isMobile={isMobile}
-                    />
-                  </TabsContent>
-                  <TabsContent value="similar">
-                    <ResultsDisplay
-                      isLoading={isAnalyzing}
-                      results={results}
-                      view="similar"
                       isMobile={isMobile}
                     />
                   </TabsContent>

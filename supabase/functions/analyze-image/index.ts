@@ -62,16 +62,6 @@ Usage & Applications:
 - [Usage 2]
 - [Usage 3]
 
-Market Information:
-- [Price range if applicable]
-- [Target market]
-- [Availability]
-
-Similar Items:
-- [Similar item 1] | [Estimated price] | [Link if available] | [90%]
-- [Similar item 2] | [Estimated price] | [Link if available] | [85%]
-- [Similar item 3] | [Estimated price] | [Link if available] | [80%]
-
 Expert Tips:
 - [Expert tip 1]
 - [Expert tip 2]

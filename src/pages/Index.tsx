@@ -14,7 +14,7 @@ const Index = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalysisResult | null>(null);
-  const [activeView, setActiveView] = useState<"details" | "tips">("details");
+  const [activeView, setActiveView] = useState<"details" | "tips" | "resources">("details");
   const isMobile = useIsMobile();
 
   const preprocessImage = async (file: File): Promise<File> => {

@@ -1,4 +1,4 @@
-import { Info, Lightbulb, History, Settings, ThumbsUp, ThumbsDown, Target, BookOpen } from "lucide-react";
+import { Info, Lightbulb, History, Settings, ThumbsUp, ThumbsDown, Target, BookOpen, Type } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,6 +51,16 @@ export const ResultsDisplay = ({ isLoading, results, view, isMobile }: ResultsDi
               <div>
                 <h4 className="text-lg font-semibold mb-2 text-foreground">Description</h4>
                 <p className="text-muted-foreground whitespace-pre-wrap">{results.description}</p>
+              </div>
+            )}
+
+            {results.extracted_text && (
+              <div>
+                <h4 className="text-lg font-semibold mb-2 flex items-center gap-2 text-foreground">
+                  <Type className="h-4 w-4" />
+                  Extracted Text
+                </h4>
+                <p className="text-muted-foreground whitespace-pre-wrap">{results.extracted_text}</p>
               </div>
             )}
 

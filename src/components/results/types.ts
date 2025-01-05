@@ -32,6 +32,7 @@ export interface AnalysisResult {
   name: string;
   description: string;
   category?: string;
+  extracted_text?: string;
   historical_context?: string[];
   technical_details?: string[];
   advantages?: string[];

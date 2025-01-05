@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import type { AnalysisResult } from "@/components/results/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -133,67 +134,71 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-7xl mx-auto">
-        <div className="text-center mb-8 sm:mb-12 space-y-3 sm:space-y-4">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground animate-fade-in">
-            SearchIt.in
-          </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
-            Upload or capture a photo to discover detailed information about any object
-          </p>
-        </div>
+        <AspectRatio ratio={9/16} className="max-w-[800px] mx-auto">
+          <div className="h-full flex flex-col">
+            <div className="text-center mb-8 sm:mb-12 space-y-3 sm:space-y-4">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground animate-fade-in">
+                SearchIt.in
+              </h1>
+              <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
+                Upload or capture a photo to discover detailed information about any object
+              </p>
+            </div>
 
-        <div className="grid gap-6 lg:gap-8 lg:grid-cols-2 items-start">
-          <div className="space-y-6">
-            {!selectedImage ? (
-              <Card className="p-4 sm:p-6 animate-fade-in">
-                <ImageUpload onImageSelect={handleImageSelect} />
-              </Card>
-            ) : (
-              <Card className="p-4 sm:p-6 animate-fade-in">
-                <ImagePreview
-                  imageUrl={selectedImage}
-                  onRemove={() => {
-                    setSelectedImage(null);
-                    setResults(null);
-                  }}
-                />
-              </Card>
-            )}
-          </div>
+            <div className="flex-1 grid gap-6 lg:gap-8 lg:grid-cols-2 items-start">
+              <div className="space-y-6">
+                {!selectedImage ? (
+                  <Card className="p-4 sm:p-6 animate-fade-in h-full">
+                    <ImageUpload onImageSelect={handleImageSelect} />
+                  </Card>
+                ) : (
+                  <Card className="p-4 sm:p-6 animate-fade-in h-full">
+                    <ImagePreview
+                      imageUrl={selectedImage}
+                      onRemove={() => {
+                        setSelectedImage(null);
+                        setResults(null);
+                      }}
+                    />
+                  </Card>
+                )}
+              </div>
 
-          <div className="space-y-6">
-            {(isAnalyzing || results) && (
-              <Card className="p-4 sm:p-6 animate-fade-in">
-                <Tabs 
-                  defaultValue="details" 
-                  className="w-full" 
-                  onValueChange={(value) => setActiveView(value as "details" | "tips")}
-                >
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="details">Details</TabsTrigger>
-                    <TabsTrigger value="tips">Tips</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="details">
-                    <ResultsDisplay
-                      isLoading={isAnalyzing}
-                      results={results}
-                      view="details"
-                      isMobile={isMobile}
-                    />
-                  </TabsContent>
-                  <TabsContent value="tips">
-                    <ResultsDisplay
-                      isLoading={isAnalyzing}
-                      results={results}
-                      view="tips"
-                      isMobile={isMobile}
-                    />
-                  </TabsContent>
-                </Tabs>
-              </Card>
-            )}
+              <div className="space-y-6">
+                {(isAnalyzing || results) && (
+                  <Card className="p-4 sm:p-6 animate-fade-in h-full">
+                    <Tabs 
+                      defaultValue="details" 
+                      className="w-full" 
+                      onValueChange={(value) => setActiveView(value as "details" | "tips")}
+                    >
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="details">Details</TabsTrigger>
+                        <TabsTrigger value="tips">Tips</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="details">
+                        <ResultsDisplay
+                          isLoading={isAnalyzing}
+                          results={results}
+                          view="details"
+                          isMobile={isMobile}
+                        />
+                      </TabsContent>
+                      <TabsContent value="tips">
+                        <ResultsDisplay
+                          isLoading={isAnalyzing}
+                          results={results}
+                          view="tips"
+                          isMobile={isMobile}
+                        />
+                      </TabsContent>
+                    </Tabs>
+                  </Card>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        </AspectRatio>
       </div>
     </div>
   );

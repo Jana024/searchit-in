@@ -1,14 +1,15 @@
-import { Info, Lightbulb, History, Settings, ThumbsUp, ThumbsDown, Target } from "lucide-react";
+import { Info, Lightbulb, History, Settings, ThumbsUp, ThumbsDown, Target, BookOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import { EducationalResourcesSection } from "./results/EducationalResourcesSection";
 import type { AnalysisResult } from "./results/types";
 
 interface ResultsDisplayProps {
   isLoading: boolean;
   results?: AnalysisResult | null;
-  view: "details" | "tips";
+  view: "details" | "tips" | "resources";
   isMobile?: boolean;
 }
 
@@ -27,8 +28,6 @@ export const ResultsDisplay = ({ isLoading, results, view, isMobile }: ResultsDi
   if (!results) {
     return null;
   }
-
-  console.log('Rendering results:', results);
 
   const scrollAreaHeight = isMobile ? "h-[400px]" : "h-[600px]";
 
@@ -160,10 +159,28 @@ export const ResultsDisplay = ({ isLoading, results, view, isMobile }: ResultsDi
     </Card>
   );
 
+  const renderResources = () => (
+    <Card className="bg-card">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <BookOpen className="h-5 w-5" />
+          Educational Resources
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <EducationalResourcesSection
+          resources={results.educational_resources}
+          isMobile={isMobile}
+        />
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6 animate-fade-in">
       {view === "details" && renderDetails()}
       {view === "tips" && renderTips()}
+      {view === "resources" && renderResources()}
     </div>
   );
 };

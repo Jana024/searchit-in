@@ -5,6 +5,13 @@ export interface SimilarItem {
   price?: string;
 }
 
+export interface EducationalResource {
+  title: string;
+  type: 'article' | 'book' | 'video' | 'course';
+  url: string;
+  description: string;
+}
+
 export interface AnalysisResult {
   name: string;
   description: string;
@@ -21,5 +28,6 @@ export interface AnalysisResult {
   environmental_impact?: string[];
   safety_considerations?: string[];
   expert_tips?: string[];
+  educational_resources?: EducationalResource[];
   confidence: number;
 }

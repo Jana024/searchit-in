@@ -67,6 +67,11 @@ Expert Tips:
 - [Expert tip 2]
 - [Expert tip 3]
 
+Educational Resources:
+- [Resource Title] | [Type: article/book/video/course] | [URL] | [Brief description]
+- [Resource Title] | [Type: article/book/video/course] | [URL] | [Brief description]
+- [Resource Title] | [Type: article/book/video/course] | [URL] | [Brief description]
+
 Be specific and detailed in your analysis.`;
 
     console.log('Making request to Gemini API...');
@@ -129,6 +134,7 @@ Be specific and detailed in your analysis.`;
       market_information: extractListSection(textResponse, "Market Information"),
       similar_items: extractSimilarItems(textResponse),
       expert_tips: extractListSection(textResponse, "Expert Tips"),
+      educational_resources: extractEducationalResources(textResponse),
       confidence: 95,
     };
 
@@ -185,6 +191,25 @@ function extractSimilarItems(text: string): any[] {
         price: parts[1] || '',
         purchase_url: parts[2] || '',
         similarity: parseInt(parts[3]) || 85,
+      };
+    });
+}
+
+function extractEducationalResources(text: string): EducationalResource[] {
+  const section = text.match(/Educational Resources:([\s\S]*?)(?=\n\n[A-Za-z]+:|$)/);
+  if (!section) return [];
+
+  return section[1]
+    .trim()
+    .split('\n')
+    .filter(line => line.trim().startsWith('-'))
+    .map(item => {
+      const parts = item.substring(1).split('|').map(s => s.trim());
+      return {
+        title: parts[0] || '',
+        type: (parts[1] || 'article') as 'article' | 'book' | 'video' | 'course',
+        url: parts[2] || '',
+        description: parts[3] || '',
       };
     });
 }

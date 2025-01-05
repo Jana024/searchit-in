@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Upload } from "lucide-react";
 
 interface ImageUploadProps {
@@ -23,22 +22,20 @@ export const ImageUpload = ({ onImageSelect }: ImageUploadProps) => {
   });
 
   return (
-    <AspectRatio ratio={9/16} className="bg-muted rounded-lg">
-      <div
-        {...getRootProps()}
-        className="h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-primary/50 rounded-lg cursor-pointer hover:border-primary transition-colors"
-      >
-        <input {...getInputProps()} />
-        <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-        {isDragActive ? (
-          <p className="text-center text-muted-foreground">Drop the image here...</p>
-        ) : (
-          <div className="text-center space-y-2">
-            <p className="text-muted-foreground">Drag & drop an image here, or click to select</p>
-            <p className="text-sm text-muted-foreground/70">Supports JPEG, PNG and WebP</p>
-          </div>
-        )}
-      </div>
-    </AspectRatio>
+    <div
+      {...getRootProps()}
+      className="h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-primary/50 rounded-lg cursor-pointer hover:border-primary transition-colors bg-muted"
+    >
+      <input {...getInputProps()} />
+      <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+      {isDragActive ? (
+        <p className="text-center text-muted-foreground">Drop the image here...</p>
+      ) : (
+        <div className="text-center space-y-2">
+          <p className="text-muted-foreground">Drag & drop an image here, or click to select</p>
+          <p className="text-sm text-muted-foreground/70">Supports JPEG, PNG and WebP</p>
+        </div>
+      )}
+    </div>
   );
 };

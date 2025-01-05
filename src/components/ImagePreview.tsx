@@ -1,4 +1,3 @@
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -9,14 +8,12 @@ interface ImagePreviewProps {
 
 export const ImagePreview = ({ imageUrl, onRemove }: ImagePreviewProps) => {
   return (
-    <div className="relative">
-      <AspectRatio ratio={9/16}>
-        <img
-          src={imageUrl}
-          alt="Preview"
-          className="rounded-lg object-contain w-full h-full"
-        />
-      </AspectRatio>
+    <div className="relative bg-muted rounded-lg overflow-hidden">
+      <img
+        src={imageUrl}
+        alt="Preview"
+        className="object-contain w-full h-full"
+      />
       <Button
         variant="destructive"
         size="icon"

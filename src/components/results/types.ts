@@ -3,6 +3,22 @@ export interface SimilarItem {
   similarity: number;
   purchase_url?: string;
   price?: string;
+  features?: string[];
+  uses?: string[];
+  availability?: {
+    online?: boolean;
+    stores?: string[];
+    regions?: string[];
+  };
+  comparison_score?: number;
+}
+
+export interface LocationSuggestion {
+  name: string;
+  type: 'landmark' | 'plant' | 'animal';
+  distance: string;
+  description: string;
+  confidence: number;
 }
 
 export interface EducationalResource {
@@ -29,5 +45,6 @@ export interface AnalysisResult {
   safety_considerations?: string[];
   expert_tips?: string[];
   educational_resources?: EducationalResource[];
+  location_suggestions?: LocationSuggestion[];
   confidence: number;
 }

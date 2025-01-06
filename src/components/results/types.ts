@@ -28,6 +28,13 @@ export interface EducationalResource {
   description: string;
 }
 
+export interface Achievement {
+  title: string;
+  description: string;
+  year?: string;
+  category?: string;
+}
+
 export interface AnalysisResult {
   name: string;
   description: string;
@@ -47,5 +54,10 @@ export interface AnalysisResult {
   expert_tips?: string[];
   educational_resources?: EducationalResource[];
   location_suggestions?: LocationSuggestion[];
+  achievements?: Achievement[];
+  cultural_significance?: string[];
+  specifications?: Record<string, string>;
+  related_events?: string[];
+  awards?: string[];
   confidence: number;
 }

@@ -1,15 +1,18 @@
-import { Info, Lightbulb, History, Settings, ThumbsUp, ThumbsDown, Target, BookOpen, Type, Link, ExternalLink } from "lucide-react";
+import { Info, Lightbulb, History, Settings, ThumbsUp, ThumbsDown, Target, BookOpen, Type, Link, ExternalLink, Trophy, Cpu } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { EducationalResourcesSection } from "./results/EducationalResourcesSection";
+import { TipsSection } from "./results/TipsSection";
+import { AchievementsSection } from "./results/AchievementsSection";
+import { SpecificationsSection } from "./results/SpecificationsSection";
 import type { AnalysisResult } from "./results/types";
 
 interface ResultsDisplayProps {
   isLoading: boolean;
   results?: AnalysisResult | null;
-  view: "details" | "tips" | "resources";
+  view: "details" | "tips" | "resources" | "achievements" | "specs";
   isMobile?: boolean;
 }
 
@@ -47,46 +50,10 @@ export const ResultsDisplay = ({ isLoading, results, view, isMobile }: ResultsDi
       <CardContent>
         <ScrollArea className={scrollAreaHeight + " pr-4"}>
           <div className="space-y-6">
-            {results.description && (
-              <div>
-                <h4 className="text-lg font-semibold mb-2 text-foreground">Description</h4>
-                <p className="text-muted-foreground whitespace-pre-wrap">{results.description}</p>
-              </div>
-            )}
-
-            {results.product_links && results.product_links.length > 0 && (
-              <div>
-                <h4 className="text-lg font-semibold mb-2 flex items-center gap-2 text-foreground">
-                  <Link className="h-4 w-4" />
-                  Shop & Reference Links
-                </h4>
-                <div className="grid gap-2">
-                  {results.product_links.map((link, index) => (
-                    <a
-                      key={index}
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-primary hover:underline p-2 rounded-md border border-border hover:border-primary transition-colors"
-                    >
-                      <Link className="h-4 w-4" />
-                      {new URL(link).hostname.replace('www.', '')}
-                      <ExternalLink className="h-3 w-3 ml-auto" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {results.extracted_text && (
-              <div>
-                <h4 className="text-lg font-semibold mb-2 flex items-center gap-2 text-foreground">
-                  <Type className="h-4 w-4" />
-                  Extracted Text
-                </h4>
-                <p className="text-muted-foreground whitespace-pre-wrap">{results.extracted_text}</p>
-              </div>
-            )}
+            <div>
+              <h4 className="text-lg font-semibold mb-2">Description</h4>
+              <p className="text-gray-600 whitespace-pre-wrap">{results.description}</p>
+            </div>
 
             {results.historical_context && results.historical_context.length > 0 && (
               <div>
@@ -144,15 +111,29 @@ export const ResultsDisplay = ({ isLoading, results, view, isMobile }: ResultsDi
               </div>
             )}
 
-            {results.usage_applications && results.usage_applications.length > 0 && (
+            {results.cultural_significance && results.cultural_significance.length > 0 && (
               <div>
                 <h4 className="text-lg font-semibold mb-2 flex items-center gap-2 text-foreground">
-                  <Target className="h-4 w-4" />
-                  Usage & Applications
+                  <BookOpen className="h-4 w-4" />
+                  Cultural Significance
                 </h4>
                 <ul className="list-disc pl-5 space-y-2">
-                  {results.usage_applications.map((usage, index) => (
-                    <li key={index} className="text-muted-foreground">{usage}</li>
+                  {results.cultural_significance.map((item, index) => (
+                    <li key={index} className="text-muted-foreground">{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {results.related_events && results.related_events.length > 0 && (
+              <div>
+                <h4 className="text-lg font-semibold mb-2 flex items-center gap-2 text-foreground">
+                  <History className="h-4 w-4" />
+                  Related Events
+                </h4>
+                <ul className="list-disc pl-5 space-y-2">
+                  {results.related_events.map((event, index) => (
+                    <li key={index} className="text-muted-foreground">{event}</li>
                   ))}
                 </ul>
               </div>
@@ -180,15 +161,7 @@ export const ResultsDisplay = ({ isLoading, results, view, isMobile }: ResultsDi
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className={scrollAreaHeight}>
-          <div className="space-y-4">
-            {results.expert_tips && results.expert_tips.map((tip, index) => (
-              <div key={index} className="p-4 border rounded-lg">
-                <p className="text-muted-foreground">{tip}</p>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
+        <TipsSection tips={results.expert_tips?.map(tip => ({ content: tip }))} isMobile={isMobile} />
       </CardContent>
     </Card>
   );
@@ -202,10 +175,35 @@ export const ResultsDisplay = ({ isLoading, results, view, isMobile }: ResultsDi
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <EducationalResourcesSection
-          resources={results.educational_resources}
-          isMobile={isMobile}
-        />
+        <EducationalResourcesSection resources={results.educational_resources} isMobile={isMobile} />
+      </CardContent>
+    </Card>
+  );
+
+  const renderAchievements = () => (
+    <Card className="bg-card">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <Trophy className="h-5 w-5" />
+          Achievements & Awards
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <AchievementsSection achievements={results.achievements} isMobile={isMobile} />
+      </CardContent>
+    </Card>
+  );
+
+  const renderSpecs = () => (
+    <Card className="bg-card">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <Cpu className="h-5 w-5" />
+          Specifications
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <SpecificationsSection specifications={results.specifications} isMobile={isMobile} />
       </CardContent>
     </Card>
   );
@@ -215,6 +213,8 @@ export const ResultsDisplay = ({ isLoading, results, view, isMobile }: ResultsDi
       {view === "details" && renderDetails()}
       {view === "tips" && renderTips()}
       {view === "resources" && renderResources()}
+      {view === "achievements" && renderAchievements()}
+      {view === "specs" && renderSpecs()}
     </div>
   );
 };

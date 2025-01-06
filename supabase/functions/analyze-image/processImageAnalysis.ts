@@ -1,4 +1,4 @@
-import { AnalysisResult } from "./types";
+import { AnalysisResult } from "./types.ts";
 
 const generateEducationalResources = (subject: string) => {
   const resources = [];

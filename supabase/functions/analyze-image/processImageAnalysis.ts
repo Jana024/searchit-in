@@ -9,8 +9,8 @@ export async function processImageAnalysis(imageData: string): Promise<{ text: s
       throw new Error('GEMINI_API_KEY is not configured');
     }
 
-    // The correct endpoint for Gemini Pro Vision API
-    const endpoint = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent';
+    // Updated endpoint for Gemini 1.5 Flash
+    const endpoint = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
     
     console.log('Making request to Gemini API...');
     const response = await fetch(

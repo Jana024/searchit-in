@@ -2,9 +2,6 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { processImageAnalysis } from "./processImageAnalysis.ts";
 import { extractSections } from "./extractSections.ts";
-import { getLocationSuggestions } from "./getLocationSuggestions.ts";
-
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,23 +14,30 @@ serve(async (req) => {
   }
 
   try {
-    if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is not configured');
-    }
-
     const { image } = await req.json();
     if (!image) {
       throw new Error('No image data provided');
     }
 
+    console.log('Processing image analysis request...');
     const base64Data = image.split(',')[1];
-    const analysisResults = await processImageAnalysis(base64Data, GEMINI_API_KEY);
-    const locationSuggestions = await getLocationSuggestions(analysisResults);
+    
+    // Process the image and get the analysis results
+    const analysisResults = await processImageAnalysis(base64Data);
+    console.log('Analysis results:', analysisResults);
+
+    // Extract sections from the analysis results
     const sections = extractSections(analysisResults.text);
+    console.log('Extracted sections:', sections);
 
     return new Response(
-      JSON.stringify({ ...sections, location_suggestions: locationSuggestions }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify(sections),
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     );
 
   } catch (error) {

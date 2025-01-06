@@ -1,66 +1,55 @@
 import { AnalysisResult } from "./types.ts";
 
-const generateProductLinks = (objectName: string) => {
-  // Add popular e-commerce and reference sites
-  return [
-    `https://www.amazon.com/s?k=${encodeURIComponent(objectName)}`,
-    `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(objectName)}`,
-    `https://www.walmart.com/search?q=${encodeURIComponent(objectName)}`
-  ];
-};
+export async function processImageAnalysis(imageData: string): Promise<{ text: string }> {
+  try {
+    console.log('Starting image analysis process...');
 
-const generateEducationalResources = (subject: string) => {
-  const resources = [
-    {
-      title: `${subject} on Wikipedia`,
-      type: "article" as const,
-      url: `https://en.wikipedia.org/wiki/${encodeURIComponent(subject)}`,
-      description: `Comprehensive information about ${subject}`
-    },
-    {
-      title: `${subject} Learning Resources`,
-      type: "course" as const,
-      url: `https://www.coursera.org/search?query=${encodeURIComponent(subject)}`,
-      description: `Online courses related to ${subject}`
-    },
-    {
-      title: `${subject} Research Articles`,
-      type: "article" as const,
-      url: `https://scholar.google.com/scholar?q=${encodeURIComponent(subject)}`,
-      description: `Academic research and papers about ${subject}`
-    },
-    {
-      title: `${subject} Video Tutorials`,
-      type: "video" as const,
-      url: `https://www.youtube.com/results?search_query=${encodeURIComponent(subject)}+tutorial`,
-      description: `Video tutorials and explanations about ${subject}`
+    // Use Google Cloud Vision API for image analysis
+    const apiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is not configured');
     }
-  ];
 
-  return resources;
-};
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: "Analyze this image in detail. Include these sections: Name, Description, Category, Historical Context, Technical Details, Advantages, Disadvantages, Usage & Applications, Expert Tips. Format each section with its name followed by a colon."
+            }, {
+              inline_data: {
+                mime_type: "image/jpeg",
+                data: imageData
+              }
+            }]
+          }]
+        })
+      }
+    );
 
-const processImageAnalysis = async (
-  imageData: string,
-  visionResult: any
-): Promise<AnalysisResult> => {
-  console.log('Processing image analysis with vision result:', visionResult);
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
 
-  // For demonstration, using a sample object name
-  // In production, this would come from the vision API result
-  const objectName = "Sample Object";
+    const data = await response.json();
+    console.log('Received API response:', data);
 
-  const result: AnalysisResult = {
-    name: objectName,
-    description: "A detailed description of the detected object",
-    category: "General",
-    confidence: 95,
-    product_links: generateProductLinks(objectName),
-    educational_resources: generateEducationalResources(objectName)
-  };
+    // Extract the text from the Gemini API response
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) {
+      throw new Error('No analysis text received from API');
+    }
 
-  console.log('Generated analysis result:', result);
-  return result;
-};
+    console.log('Analysis text:', text);
+    return { text };
 
-export { processImageAnalysis };
+  } catch (error) {
+    console.error('Error in processImageAnalysis:', error);
+    throw error;
+  }
+}

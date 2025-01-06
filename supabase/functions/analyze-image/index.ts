@@ -9,6 +9,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -22,13 +23,17 @@ serve(async (req) => {
     console.log('Processing image analysis request...');
     const base64Data = image.split(',')[1];
     
+    if (!base64Data) {
+      throw new Error('Invalid image data format');
+    }
+
     // Process the image and get the analysis results
     const analysisResults = await processImageAnalysis(base64Data);
-    console.log('Analysis results:', analysisResults);
+    console.log('Analysis results received');
 
     // Extract sections from the analysis results
     const sections = extractSections(analysisResults.text);
-    console.log('Extracted sections:', sections);
+    console.log('Sections extracted successfully');
 
     return new Response(
       JSON.stringify(sections),
@@ -42,6 +47,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in analyze-image function:', error);
+    
     return new Response(
       JSON.stringify({
         error: error.message,

@@ -1,4 +1,4 @@
-import { Info, Lightbulb, History, Settings, ThumbsUp, ThumbsDown, Target, BookOpen, Type } from "lucide-react";
+import { Info, Lightbulb, History, Settings, ThumbsUp, ThumbsDown, Target, BookOpen, Type, Link } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,6 +51,29 @@ export const ResultsDisplay = ({ isLoading, results, view, isMobile }: ResultsDi
               <div>
                 <h4 className="text-lg font-semibold mb-2 text-foreground">Description</h4>
                 <p className="text-muted-foreground whitespace-pre-wrap">{results.description}</p>
+              </div>
+            )}
+
+            {results.product_links && results.product_links.length > 0 && (
+              <div>
+                <h4 className="text-lg font-semibold mb-2 flex items-center gap-2 text-foreground">
+                  <Link className="h-4 w-4" />
+                  Product Links
+                </h4>
+                <ul className="list-disc pl-5 space-y-2">
+                  {results.product_links.map((link, index) => (
+                    <li key={index} className="text-muted-foreground">
+                      <a 
+                        href={link} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-primary hover:underline flex items-center gap-1"
+                      >
+                        View Product <Link className="h-3 w-3" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 

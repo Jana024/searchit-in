@@ -39,7 +39,7 @@ export interface AnalysisResult {
   disadvantages?: string[];
   usage_applications?: string[];
   market_information?: string[];
-  product_links?: string;
+  product_links?: string[];
   similar_items?: SimilarItem[];
   maintenance_care?: string[];
   environmental_impact?: string[];

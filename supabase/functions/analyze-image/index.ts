@@ -28,10 +28,12 @@ serve(async (req) => {
     }
 
     // Process the image and get the analysis results
+    console.log('Calling processImageAnalysis...');
     const analysisResults = await processImageAnalysis(base64Data);
     console.log('Analysis results received');
 
     // Extract sections from the analysis results
+    console.log('Extracting sections...');
     const sections = extractSections(analysisResults.text);
     console.log('Sections extracted successfully');
 

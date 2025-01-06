@@ -1,6 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { EducationalResource } from "./types";
+import { Badge } from "@/components/ui/badge";
 
 interface EducationalResourcesSectionProps {
   resources?: EducationalResource[];
@@ -13,21 +14,26 @@ export const EducationalResourcesSection = ({ resources, isMobile }: Educational
       {resources?.map((resource, index) => (
         <div key={index} className="p-4 border rounded-lg hover:border-primary transition-colors">
           <div className="flex justify-between items-start gap-4">
-            <div>
-              <h4 className="font-semibold mb-1">{resource.title}</h4>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h4 className="font-semibold">{resource.title}</h4>
+                <Badge variant="secondary" className="text-xs">
+                  {resource.type}
+                </Badge>
+              </div>
               <p className="text-sm text-muted-foreground mb-2">{resource.description}</p>
-              <span className="inline-block px-2 py-1 text-xs rounded-full bg-secondary text-secondary-foreground">
-                {resource.type}
-              </span>
             </div>
-            <a
-              href={resource.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:text-primary/80"
-            >
-              <ExternalLink className="h-5 w-5" />
-            </a>
+            {resource.url && resource.url !== "N/A" && (
+              <a
+                href={resource.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80 flex items-center gap-1"
+              >
+                Visit
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            )}
           </div>
         </div>
       ))}

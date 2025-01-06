@@ -1,31 +1,41 @@
 import { AnalysisResult } from "./types.ts";
 
+const generateProductLinks = (objectName: string) => {
+  // Add popular e-commerce and reference sites
+  return [
+    `https://www.amazon.com/s?k=${encodeURIComponent(objectName)}`,
+    `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(objectName)}`,
+    `https://www.walmart.com/search?q=${encodeURIComponent(objectName)}`
+  ];
+};
+
 const generateEducationalResources = (subject: string) => {
-  const resources = [];
-  
-  // Official manga resource
-  resources.push({
-    title: "Naruto: The Official Manga",
-    type: "book" as const,
-    url: "https://www.viz.com/naruto",
-    description: "The original manga series by Masashi Kishimoto that started it all."
-  });
-
-  // Official anime resource
-  resources.push({
-    title: "Naruto & Naruto Shippuden",
-    type: "video" as const,
-    url: "https://www.crunchyroll.com/series/GYQ4MW246/naruto-shippuden",
-    description: "Watch the complete Naruto anime series on Crunchyroll."
-  });
-
-  // Educational article about anime art
-  resources.push({
-    title: "Understanding Anime Art Style",
-    type: "article" as const,
-    url: "https://www.animenewsnetwork.com/feature/2020-04-10/understanding-anime-art-styles/.158989",
-    description: "An in-depth look at the evolution and characteristics of anime art styles."
-  });
+  const resources = [
+    {
+      title: `${subject} on Wikipedia`,
+      type: "article" as const,
+      url: `https://en.wikipedia.org/wiki/${encodeURIComponent(subject)}`,
+      description: `Comprehensive information about ${subject}`
+    },
+    {
+      title: `${subject} Learning Resources`,
+      type: "course" as const,
+      url: `https://www.coursera.org/search?query=${encodeURIComponent(subject)}`,
+      description: `Online courses related to ${subject}`
+    },
+    {
+      title: `${subject} Research Articles`,
+      type: "article" as const,
+      url: `https://scholar.google.com/scholar?q=${encodeURIComponent(subject)}`,
+      description: `Academic research and papers about ${subject}`
+    },
+    {
+      title: `${subject} Video Tutorials`,
+      type: "video" as const,
+      url: `https://www.youtube.com/results?search_query=${encodeURIComponent(subject)}+tutorial`,
+      description: `Video tutorials and explanations about ${subject}`
+    }
+  ];
 
   return resources;
 };
@@ -34,16 +44,22 @@ const processImageAnalysis = async (
   imageData: string,
   visionResult: any
 ): Promise<AnalysisResult> => {
+  console.log('Processing image analysis with vision result:', visionResult);
+
+  // For demonstration, using a sample object name
+  // In production, this would come from the vision API result
+  const objectName = "Sample Object";
+
   const result: AnalysisResult = {
-    name: "Naruto",
-    description: "A popular manga and anime series.",
+    name: objectName,
+    description: "A detailed description of the detected object",
+    category: "General",
     confidence: 95,
-    educational_resources: []
+    product_links: generateProductLinks(objectName),
+    educational_resources: generateEducationalResources(objectName)
   };
 
-  // Update the educational resources with valid links
-  result.educational_resources = generateEducationalResources(result.name);
-
+  console.log('Generated analysis result:', result);
   return result;
 };
 

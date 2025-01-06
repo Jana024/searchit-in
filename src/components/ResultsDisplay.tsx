@@ -1,4 +1,4 @@
-import { Info, Lightbulb, History, Settings, ThumbsUp, ThumbsDown, Target, BookOpen, Type, Link } from "lucide-react";
+import { Info, Lightbulb, History, Settings, ThumbsUp, ThumbsDown, Target, BookOpen, Type, Link, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -58,22 +58,23 @@ export const ResultsDisplay = ({ isLoading, results, view, isMobile }: ResultsDi
               <div>
                 <h4 className="text-lg font-semibold mb-2 flex items-center gap-2 text-foreground">
                   <Link className="h-4 w-4" />
-                  Product Links
+                  Shop & Reference Links
                 </h4>
-                <ul className="list-disc pl-5 space-y-2">
+                <div className="grid gap-2">
                   {results.product_links.map((link, index) => (
-                    <li key={index} className="text-muted-foreground">
-                      <a 
-                        href={link} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="text-primary hover:underline flex items-center gap-1"
-                      >
-                        View Product <Link className="h-3 w-3" />
-                      </a>
-                    </li>
+                    <a
+                      key={index}
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-primary hover:underline p-2 rounded-md border border-border hover:border-primary transition-colors"
+                    >
+                      <Link className="h-4 w-4" />
+                      {new URL(link).hostname.replace('www.', '')}
+                      <ExternalLink className="h-3 w-3 ml-auto" />
+                    </a>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
 
